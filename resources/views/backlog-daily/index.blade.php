@@ -1,0 +1,502 @@
+@extends('layouts.app')
+
+@section('title', 'Backlog Daily (DPS)')
+@section('page-title', 'Backlog Daily (DPS)')
+
+@section('breadcrumb')
+    <li class="breadcrumb-item active">Backlog Daily</li>
+@endsection
+
+@push('styles')
+<style>
+    body, .content-wrapper { background: #f4f6f9 !important; }
+
+    /* ===== STAT CARDS — OPSI E ===== */
+    .stat-card {
+        border-radius: 14px;
+        padding: 22px 24px;
+        position: relative;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .stat-card .stat-icon {
+        position: absolute;
+        right: 18px; top: 18px;
+        font-size: 2.8rem;
+        opacity: 0.15;
+    }
+    .stat-card .stat-number {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 2px;
+        line-height: 1;
+    }
+    .stat-card .stat-label {
+        font-size: 13px;
+        font-weight: 600;
+        opacity: 0.75;
+        margin-bottom: 12px;
+    }
+    .stat-card .stat-footer {
+        font-size: 12px;
+        font-weight: 600;
+        border-top: 1px solid rgba(0,0,0,0.08);
+        padding-top: 10px;
+    }
+
+    /* Card 1 — Total Backlog: KUNING */
+    .stat-card.bg-total {
+        background: #FFD700;
+        color: #1A202C;
+    }
+    .stat-card.bg-total .stat-icon { color: #1A202C; }
+    .stat-card.bg-total .stat-footer { border-top-color: rgba(26,32,44,0.12); color: rgba(26,32,44,0.65); }
+
+    /* Card 2 — Complete: NAVY */
+    .stat-card.bg-complete {
+        background: #1A202C;
+        color: #FFD700;
+    }
+    .stat-card.bg-complete .stat-icon { color: #FFD700; }
+    .stat-card.bg-complete .stat-label { color: #A0AEC0; opacity: 1; }
+    .stat-card.bg-complete .stat-footer { border-top-color: rgba(255,215,0,0.15); color: #A0AEC0; }
+
+    /* Card 3 — Outstanding: PUTIH + merah */
+    .stat-card.bg-outstanding {
+        background: #FFFFFF;
+        color: #1A202C;
+        border: 1.5px solid #FED7D7 !important;
+        box-shadow: 0 4px 15px rgba(229,62,62,0.1) !important;
+    }
+    .stat-card.bg-outstanding .stat-number { color: #E53E3E; }
+    .stat-card.bg-outstanding .stat-label { color: #718096; opacity: 1; }
+    .stat-card.bg-outstanding .stat-icon { color: #E53E3E; }
+    .stat-card.bg-outstanding .stat-footer { border-top-color: #FED7D7; color: #E53E3E; }
+
+    /* Card 4 — On Progress: ABU MUDA */
+    .stat-card.bg-progress {
+        background: #F7FAFC;
+        color: #1A202C;
+        border: 1.5px solid #E2E8F0 !important;
+    }
+    .stat-card.bg-progress .stat-number { color: #4A5568; }
+    .stat-card.bg-progress .stat-label { color: #718096; opacity: 1; }
+    .stat-card.bg-progress .stat-icon { color: #4A5568; }
+    .stat-card.bg-progress .stat-footer { border-top-color: #E2E8F0; color: #718096; }
+
+    /* ===== CARD ===== */
+    .card {
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+        background: #fff;
+    }
+    .card .card-header {
+        background: #fff;
+        border-bottom: 1px solid #f0f0f0;
+        border-radius: 14px 14px 0 0 !important;
+        padding: 14px 20px;
+    }
+
+    /* ===== TABLE ===== */
+    .table-monitoring thead th {
+        background: #1A202C;
+        color: #FFD700;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 10px 8px;
+        border: none;
+        white-space: nowrap;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+    .table-monitoring tbody td {
+        font-size: 12px;
+        padding: 8px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    .table-monitoring tbody tr:hover { background: #FFFFF0; }
+
+    /* ===== BADGE JARAK ===== */
+    .badge-jarak {
+        font-size: 11px;
+        padding: 4px 9px;
+        border-radius: 20px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .badge-terlambat { background: #ffebee; color: #c62828; }
+    .badge-hariini   { background: #fff8e1; color: #f57f17; }
+    .badge-belum     { background: #e8f5e9; color: #2e7d32; }
+
+    /* ===== FILTER ===== */
+    .filter-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #1A202C;
+        margin-bottom: 4px;
+    }
+    .filter-control {
+        border-radius: 8px;
+        border: 1.5px solid #E2E8F0;
+        font-size: 13px;
+        height: 36px;
+        background: #fff;
+        transition: border-color 0.2s;
+    }
+    .filter-control:focus {
+        border-color: #E6C200 !important;
+        box-shadow: 0 0 0 3px rgba(255,215,0,0.15) !important;
+        outline: none;
+    }
+
+    /* ===== PAGINATION ===== */
+    .pagination .page-item .page-link {
+        border-radius: 6px !important;
+        margin: 0 2px;
+        font-size: 12px;
+        padding: 5px 10px;
+        color: #1A202C;
+        border-color: #E2E8F0;
+        font-weight: 600;
+    }
+    .pagination .page-item .page-link:hover {
+        background: #FFD700;
+        border-color: #E6C200;
+        color: #1A202C;
+    }
+    .pagination .page-item.active .page-link {
+        background: #1A202C;
+        border-color: #1A202C;
+        color: #FFD700;
+    }
+
+    /* ===== BULK ACTION BAR ===== */
+    #bulk-actions {
+        background: #F7FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+</style>
+@endpush
+
+@section('content')
+
+{{-- Kartu Statistik --}}
+<div class="row mb-3">
+    <div class="col-lg-3 col-6 mb-3">
+        <div class="stat-card bg-total">
+            <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+            <div class="stat-number">{{ $stats['total'] }}</div>
+            <div class="stat-label">Total Backlog</div>
+            <div class="stat-footer">
+                <i class="fas fa-info-circle mr-1"></i> Semua data backlog
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 mb-3">
+        <div class="stat-card bg-complete">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-number">{{ $stats['complete'] }}</div>
+            <div class="stat-label">Complete</div>
+            <div class="stat-footer">
+                <i class="fas fa-info-circle mr-1"></i> Sudah selesai
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 mb-3">
+        <div class="stat-card bg-outstanding">
+            <div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stat-number">{{ $stats['outstanding'] }}</div>
+            <div class="stat-label">Outstanding</div>
+            <div class="stat-footer">
+                <i class="fas fa-exclamation-triangle mr-1"></i> Perlu perhatian
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6 mb-3">
+        <div class="stat-card bg-progress">
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="stat-number">{{ $stats['pending'] }}</div>
+            <div class="stat-label">On Progress</div>
+            <div class="stat-footer">
+                <i class="fas fa-info-circle mr-1"></i> Sedang berjalan
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Tabel --}}
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 font-weight-bold">
+                <i class="fas fa-table mr-2" style="color:#FFD700;"></i> Data Backlog Daily
+            </h6>
+            <a href="{{ route('backlog-daily.export-excel') }}?tanggal={{ $tanggalFilter }}"
+                class="btn btn-success btn-sm" style="border-radius: 8px; font-size: 12px;">
+                <i class="fas fa-download mr-1"></i> Export Excel
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+
+        {{-- Filter --}}
+        <form method="GET" action="{{ route('backlog-daily.index') }}" class="mb-3">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group mb-0">
+                        <label class="filter-label">Tanggal BCS</label>
+                        <input type="date" name="tanggal" class="form-control filter-control"
+                            value="{{ $tanggalFilter }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group mb-0">
+                        <label class="filter-label">Status</label>
+                        <select name="status" class="form-control filter-control">
+                            <option value="">Semua Status</option>
+                            <option value="pending"      {{ request('status') == 'pending'      ? 'selected' : '' }}>On Progress</option>
+                            <option value="outstanding"  {{ request('status') == 'outstanding'  ? 'selected' : '' }}>Outstanding</option>
+                            <option value="complete"     {{ request('status') == 'complete'     ? 'selected' : '' }}>Complete</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-block" style="
+                        border-radius: 8px; font-size: 13px; height: 36px;
+                        background: #1A202C; color: #FFD700; font-weight: 700;
+                        border: none;
+                    ">
+                        <i class="fas fa-search mr-1"></i> Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {{-- Bulk Actions --}}
+        <div class="mb-3" id="bulk-actions" style="display:none;">
+            <button type="button" class="btn btn-success btn-sm" id="btn-complete" style="border-radius: 8px;">
+                <i class="fas fa-check mr-1"></i> Tandai Complete
+            </button>
+            <button type="button" class="btn btn-sm" id="btn-outstanding" style="border-radius: 8px; background:#FFD700; color:#1A202C; font-weight:700; border:none;">
+                <i class="fas fa-exclamation-circle mr-1"></i> Tandai Outstanding
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" id="btn-bulk-delete" style="border-radius: 8px;">
+                <i class="fas fa-trash mr-1"></i> Hapus Terpilih
+            </button>
+            <span class="ml-2 text-muted" id="selected-count" style="font-size: 12px;">0 data dipilih</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-monitoring table-hover">
+                <thead>
+                    <tr>
+                        <th style="width:30px;"><input type="checkbox" id="select-all"></th>
+                        <th>No</th>
+                        <th>Reservation</th>
+                        <th>PN</th>
+                        <th>NPN</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Backlog Desc</th>
+                        <th>Plan Date</th>
+                        <th>Jarak Eksekusi</th>
+                        <th>Tgl BCS</th>
+                        <th>Remarks</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($backlogDaily as $index => $item)
+                    <tr id="row-{{ $item->id }}">
+                        <td><input type="checkbox" class="row-checkbox" value="{{ $item->id }}"></td>
+                        <td>{{ $backlogDaily->firstItem() + $index }}</td>
+                        <td>
+                            <span style="font-weight: 600; font-size: 12px;">{{ $item->reservation_number ?? '-' }}</span><br>
+                            <small class="text-muted">Item: {{ $item->reservation_item ?? '-' }}</small>
+                        </td>
+                        <td>{{ $item->part_number ?? '-' }}</td>
+                        <td>{{ $item->npn ?? '-' }}</td>
+                        <td>{{ $item->qty ?? '-' }}</td>
+                        <td>
+                            @if($item->unit)
+                                <span class="badge badge-info" style="border-radius: 20px; font-size: 11px; padding: 4px 8px;">
+                                    {{ $item->unit }}
+                                </span>
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td>{{ $item->mo_description ?? '-' }}</td>
+                        <td>{{ $item->plan_date ? \Carbon\Carbon::parse($item->plan_date)->format('d/m/Y') : '-' }}</td>
+                        <td>
+                            @if($item->jarak_eksekusi !== null && $item->jarak_eksekusi !== '')
+                                @php $jarak = (int) $item->jarak_eksekusi; @endphp
+                                @if($jarak > 0)
+                                    <span class="badge-jarak badge-terlambat">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ $jarak }} hari
+                                    </span>
+                                @elseif($jarak == 0)
+                                    <span class="badge-jarak badge-hariini">
+                                        <i class="fas fa-clock mr-1"></i>Hari ini
+                                    </span>
+                                @else
+                                    <span class="badge-jarak badge-belum">
+                                        <i class="fas fa-check-circle mr-1"></i>{{ abs($jarak) }} hari lagi
+                                    </span>
+                                @endif
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td>{{ $item->tanggal_bcs ? \Carbon\Carbon::parse($item->tanggal_bcs)->format('d/m/Y') : '-' }}</td>
+                        <td>{{ $item->remarks ?? '-' }}</td>
+                        <td>
+                            @if($item->status == 'complete')
+                                <span class="badge badge-success" style="border-radius: 20px; padding: 5px 10px;">Complete</span>
+                            @elseif($item->status == 'outstanding')
+                                <span class="badge badge-warning" style="border-radius: 20px; padding: 5px 10px;">Outstanding</span>
+                            @else
+                                <span class="badge badge-secondary" style="border-radius: 20px; padding: 5px 10px;">On Progress</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($item->status != 'complete')
+                            <button type="button" class="btn btn-success btn-xs btn-action"
+                                data-id="{{ $item->id }}" data-status="complete" title="Complete"
+                                style="border-radius: 6px; padding: 3px 7px;">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button type="button" class="btn btn-xs btn-action"
+                                data-id="{{ $item->id }}" data-status="outstanding" title="Outstanding"
+                                style="border-radius: 6px; padding: 3px 7px; background:#FFD700; color:#1A202C; border:none;">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </button>
+                            @endif
+                            <button type="button" class="btn btn-danger btn-xs btn-delete"
+                                data-id="{{ $item->id }}" title="Hapus"
+                                style="border-radius: 6px; padding: 3px 7px;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="14" class="text-center text-muted py-5">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block" style="opacity: 0.3;"></i>
+                            Belum ada data backlog
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-3">
+            {{ $backlogDaily->links() }}
+        </div>
+
+    </div>
+</div>
+
+@endsection
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+
+    $('#select-all').on('change', function() {
+        $('.row-checkbox').prop('checked', $(this).is(':checked'));
+        updateBulkActions();
+    });
+    $(document).on('change', '.row-checkbox', function() { updateBulkActions(); });
+
+    function updateBulkActions() {
+        var count = $('.row-checkbox:checked').length;
+        if (count > 0) { $('#bulk-actions').show(); $('#selected-count').text(count + ' data dipilih'); }
+        else { $('#bulk-actions').hide(); }
+    }
+
+    $(document).on('click', '.btn-action', function() {
+        var id = $(this).data('id'), status = $(this).data('status');
+        var label = status == 'complete' ? 'Complete' : 'Outstanding';
+        if (confirm('Tandai data ini sebagai ' + label + '?')) { updateStatus([id], status); }
+    });
+
+    $(document).on('click', '.btn-delete', function() {
+        var id = $(this).data('id');
+        if (confirm('Yakin hapus data ini?')) {
+            $.ajax({
+                url: '/backlog-daily/' + id,
+                method: 'POST',
+                data: { _method: 'DELETE', _token: '{{ csrf_token() }}' },
+                success: function(response) {
+                    if (response.success) { alert(response.message); $('#row-' + id).remove(); }
+                },
+                error: function() { alert('Gagal menghapus data!'); }
+            });
+        }
+    });
+
+    $('#btn-bulk-delete').on('click', function() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) return;
+        if (confirm('Yakin hapus ' + ids.length + ' data terpilih?')) {
+            $.ajax({
+                url: '{{ route("backlog-daily.bulk-delete") }}',
+                method: 'POST',
+                data: { _method: 'DELETE', _token: '{{ csrf_token() }}', ids: ids },
+                success: function(response) {
+                    if (response.success) { alert(response.message); location.reload(); }
+                },
+                error: function() { alert('Gagal menghapus data!'); }
+            });
+        }
+    });
+
+    $('#btn-complete').on('click', function() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) return;
+        if (confirm('Tandai ' + ids.length + ' data sebagai Complete?')) { updateStatus(ids, 'complete'); }
+    });
+
+    $('#btn-outstanding').on('click', function() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) return;
+        if (confirm('Tandai ' + ids.length + ' data sebagai Outstanding?')) { updateStatus(ids, 'outstanding'); }
+    });
+
+    function getSelectedIds() {
+        var ids = [];
+        $('.row-checkbox:checked').each(function() { ids.push($(this).val()); });
+        return ids;
+    }
+
+    function updateStatus(ids, status) {
+        $.ajax({
+            url: '{{ route("dashboard.update-status") }}',
+            method: 'POST',
+            data: { _token: '{{ csrf_token() }}', ids: ids, status: status },
+            success: function(response) {
+                if (response.success) { alert('Status berhasil diupdate!'); location.reload(); }
+            },
+            error: function() { alert('Gagal update status!'); }
+        });
+    }
+
+});
+</script>
+@endpush
