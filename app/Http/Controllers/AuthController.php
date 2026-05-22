@@ -26,7 +26,21 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Cek rate limiting - max 5 kali dalam 1 menit
+        $key = 'login_attempts_' . $request->ip();
+        $maxAttempts = 5;
+        $decayMinutes = 1;
+
+        if (cache()->has($key) && cache()->get($key) >= $maxAttempts) {
+            return back()->withErrors([
+                'email' => 'Terlalu banyak percobaan login. Coba lagi dalam 1 menit.',
+            ])->onlyInput('email');
+        }
+
         if (Auth::attempt($credentials, $request->filled('remember'))) {
+            // Reset counter jika berhasil login
+            cache()->forget($key);
+            
             $request->session()->regenerate();
             
             // Update last login
@@ -37,6 +51,10 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'))
                 ->with('success', 'Login berhasil! Selamat datang ' . Auth::user()->name);
         }
+
+        // Tambah counter gagal login
+        $attempts = cache()->get($key, 0) + 1;
+        cache()->put($key, $attempts, now()->addMinutes($decayMinutes));
 
         return back()->withErrors([
             'email' => 'Email atau password salah.',
