@@ -10,7 +10,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header"><h3 class="card-title"><i class="fas fa-user mr-1"></i> Edit Profile</h3></div>
-            <form action="{{ route('user.update-profile') }}" method="POST">
+            <form action="{{ route('profile.update') }}" method="POST">
                 @csrf @method('PUT')
                 <div class="card-body">
                     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
@@ -41,7 +41,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header"><h3 class="card-title"><i class="fas fa-key mr-1"></i> Ganti Password</h3></div>
-            <form action="{{ route('user.change-password') }}" method="POST">
+            <form action="{{ route('profile.change-password') }}" method="POST">
                 @csrf @method('PUT')
                 <div class="card-body">
                     <div class="form-group">
