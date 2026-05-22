@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Models\ActivityLog;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -47,6 +48,7 @@ class AuthController extends Controller
             Auth::user()->update([
                 'last_login' => now()
             ]);
+            ActivityLog::log('login', 'User ' . Auth::user()->name . ' berhasil login');
 
             return redirect()->intended(route('dashboard'))
                 ->with('success', 'Login berhasil! Selamat datang ' . Auth::user()->name);
@@ -64,6 +66,7 @@ class AuthController extends Controller
     // Logout
     public function logout(Request $request)
     {
+        ActivityLog::log('logout', 'User ' . Auth::user()->name . ' logout');
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
