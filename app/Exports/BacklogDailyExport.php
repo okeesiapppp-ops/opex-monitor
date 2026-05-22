@@ -23,7 +23,7 @@ class BacklogDailyExport implements FromCollection, WithHeadings, WithMapping, W
     public function collection()
     {
         return TbBacklogDaily::with(['vendor', 'planner'])
-            ->whereDate('tanggal', $this->tanggal)
+            ->whereDate('tanggal_bcs', $this->tanggal)
             ->get();
     }
 
@@ -54,7 +54,7 @@ class BacklogDailyExport implements FromCollection, WithHeadings, WithMapping, W
 
         return [
             $this->no,
-            $row->tanggal ? $row->tanggal->format('d/m/Y') : '-',
+            $row->tanggal_bcs ? $row->tanggal_bcs->format('d/m/Y') : '-',
             $row->unit_number,
             $row->model,
             $row->part_number,
