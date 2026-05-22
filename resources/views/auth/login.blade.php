@@ -470,23 +470,7 @@
         </button>
       </form>
 
-      <!-- Demo Accounts -->
-      <div class="demo-section">
-        <div class="demo-title">Demo Accounts</div>
-        <div class="demo-item">
-          <span>admin@uta.com / password</span>
-          <span class="demo-role">Admin</span>
-        </div>
-        <div class="demo-item">
-          <span>vendor@uta.com / password</span>
-          <span class="demo-role">Vendor</span>
-        </div>
-        <div class="demo-item">
-          <span>planner@pama.com / password</span>
-          <span class="demo-role">Planner</span>
-        </div>
-      </div>
-    </div>
+     
 
   </div>
 
