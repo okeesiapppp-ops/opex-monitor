@@ -36,6 +36,13 @@ class TbBacklogDaily extends Model
         'jarak_eksekusi',
         'tanggal_bcs',
         'remarks',
+        'eta',
+        'posisi',
+        'cancel_reason',
+        'previous_status',
+        'referensi_dokumen',
+        'material',
+        'qty_zboh',
     ];
 
     protected $casts = [
@@ -44,6 +51,7 @@ class TbBacklogDaily extends Model
         'tanggal_bcs' => 'date',
         'qty'         => 'integer',
         'is_ready'    => 'boolean',
+        'eta'         => 'date',
     ];
 
     // Relasi ke Backlog

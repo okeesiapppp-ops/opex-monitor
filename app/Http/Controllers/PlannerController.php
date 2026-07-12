@@ -30,7 +30,7 @@ class PlannerController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('nama', 'like', "%{$search}%")
+                $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('jabatan', 'like', "%{$search}%");
             });
@@ -51,7 +51,7 @@ class PlannerController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama' => 'required|string|max:100',
+            'name' => 'required|string|max:100',
             'email' => 'required|email|unique:tb_planner,email',
             'telepon' => 'required|string|max:20',
             'perusahaan' => 'required|string|max:100',
@@ -66,7 +66,7 @@ class PlannerController extends Controller
         ]);
 
         $plannerData = [
-            'nama' => $validated['nama'],
+            'name' => $validated['name'],
             'email' => $validated['email'],
             'telepon' => $validated['telepon'],
             'perusahaan' => $validated['perusahaan'],
@@ -124,7 +124,7 @@ class PlannerController extends Controller
         $planner = TbPlanner::findOrFail($id);
 
         $validated = $request->validate([
-            'nama' => 'required|string|max:100',
+            'name' => 'required|string|max:100',
             'email' => 'required|email|unique:tb_planner,email,' . $id,
             'telepon' => 'required|string|max:20',
             'perusahaan' => 'required|string|max:100',
@@ -138,7 +138,7 @@ class PlannerController extends Controller
         // Update user account if exists
         if ($planner->user) {
             $planner->user->update([
-                'name' => $validated['nama'],
+                'name' => $validated['name'],
                 'company' => $validated['perusahaan'],
                 'status' => $validated['status'],
             ]);

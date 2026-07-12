@@ -28,7 +28,7 @@ class VendorController extends Controller
                 $q->where('nama_vendor', 'like', "%{$search}%")
                   ->orWhere('pic', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('kode_vendor', 'like', "%{$search}%");
+                  ->orWhere('code', 'like', "%{$search}%");
             });
         }
 
@@ -52,7 +52,7 @@ class VendorController extends Controller
             'telepon' => 'required|string|max:20',
             'email' => 'required|email|unique:tb_vendor,email',
             'alamat' => 'nullable|string',
-            'kode_vendor' => 'required|string|max:20|unique:tb_vendor,kode_vendor',
+            'code' => 'required|string|max:20|unique:tb_vendor,kode_vendor',
             
             // User account
             'create_user' => 'nullable|boolean',
@@ -67,7 +67,7 @@ class VendorController extends Controller
             'telepon' => $validated['telepon'],
             'email' => $validated['email'],
             'alamat' => $validated['alamat'] ?? null,
-            'kode_vendor' => $validated['kode_vendor'],
+            'code' => $validated['code'],
             'status' => 'active',
         ];
 
@@ -126,7 +126,7 @@ class VendorController extends Controller
             'telepon' => 'required|string|max:20',
             'email' => 'required|email|unique:tb_vendor,email,' . $id,
             'alamat' => 'nullable|string',
-            'kode_vendor' => 'required|string|max:20|unique:tb_vendor,kode_vendor,' . $id,
+            'code' => 'required|string|max:20|unique:tb_vendor,kode_vendor,' . $id,
             'status' => 'required|in:active,inactive',
         ]);
 

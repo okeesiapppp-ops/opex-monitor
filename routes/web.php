@@ -13,6 +13,7 @@ use App\Http\Controllers\ReconsultController;
 use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CancelController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -30,6 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/update-status', [DashboardController::class, 'updateStatus'])->name('dashboard.update-status');
     Route::delete('/dashboard/hapus-data', [DashboardController::class, 'hapusDataImport'])->name('dashboard.hapus-data');
     Route::post('/dashboard/update-remarks', [DashboardController::class, 'updateRemarks'])->name('dashboard.update-remarks');
+    Route::get('/dashboard/export-excel', [DashboardController::class, 'exportExcel'])->name('dashboard.export-excel');
 
     // User Profile
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
@@ -63,7 +65,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/edit', [BacklogDailyController::class, 'edit'])->name('edit');
         Route::put('/{id}', [BacklogDailyController::class, 'update'])->name('update');
         Route::delete('/{id}', [BacklogDailyController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/delete', [BacklogDailyController::class, 'destroyFromCancel'])->name('delete-from-cancel');
         Route::post('/{id}/update-readiness', [BacklogDailyController::class, 'updateReadiness'])->name('update-readiness');
+        Route::post('/{id}/update-eta', [BacklogDailyController::class, 'updateEta'])->name('update-eta');
+        Route::post('/{id}/update-posisi', [BacklogDailyController::class, 'updatePosisi'])->name('update-posisi');
     });
 
     // ORDER ROUTES
@@ -134,6 +139,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/reconciliation-summary', [ReportController::class, 'reconciliationSummary'])->name('reconciliation-summary');
         Route::get('/custom-report', [ReportController::class, 'customReport'])->name('custom-report');
         Route::post('/export', [ReportController::class, 'export'])->name('export');
+    });
+
+    // CANCEL ROUTES
+    Route::prefix('cancel')->name('cancel.')->group(function () {
+        Route::get('/', [CancelController::class, 'index'])->name('index');
+        Route::post('/{id}/cancel', [CancelController::class, 'cancel'])->name('cancel');
+        Route::post('/{id}/restore', [CancelController::class, 'restore'])->name('restore');
     });
 
     // ADMIN ONLY ROUTES

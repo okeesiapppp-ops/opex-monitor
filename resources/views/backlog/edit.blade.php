@@ -54,7 +54,7 @@
                     <div class="form-group">
                         <label>Status <span class="text-danger">*</span></label>
                         <select name="status" class="form-control" required>
-                            <option value="pending" {{ old('status', $backlog->status)=='pending'?'selected':'' }}>Pending</option>
+                            <option value="overdue" {{ old('status', $backlog->status)=='overdue'?'selected':'' }}>Pending</option>
                             <option value="in_progress" {{ old('status', $backlog->status)=='in_progress'?'selected':'' }}>In Progress</option>
                             <option value="complete" {{ old('status', $backlog->status)=='complete'?'selected':'' }}>Complete</option>
                             <option value="cancelled" {{ old('status', $backlog->status)=='cancelled'?'selected':'' }}>Cancelled</option>

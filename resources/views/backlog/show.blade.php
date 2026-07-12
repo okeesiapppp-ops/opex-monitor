@@ -32,7 +32,7 @@
                     <tr><th width="40%">Status</th><td>
                         @php
                             $badge = match($backlog->status) {
-                                'pending' => 'warning',
+                                'overdue' => 'warning',
                                 'in_progress' => 'info',
                                 'complete' => 'success',
                                 'cancelled' => 'danger',

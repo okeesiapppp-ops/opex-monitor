@@ -45,9 +45,12 @@ class ReportController extends Controller
         // Semua query pakai tanggal_bcs
         $total       = DB::table('tb_backlog_daily')->whereBetween('tanggal_bcs', [$startDate, $endDate])->count();
         $complete    = DB::table('tb_backlog_daily')->whereBetween('tanggal_bcs', [$startDate, $endDate])->where('status', 'complete')->count();
-        $pending     = DB::table('tb_backlog_daily')->whereBetween('tanggal_bcs', [$startDate, $endDate])->where('status', 'pending')->count();
+        $overdue     = DB::table('tb_backlog_daily')->whereBetween('tanggal_bcs', [$startDate, $endDate])->where('status', 'overdue')->count();
         $outstanding = DB::table('tb_backlog_daily')->whereBetween('tanggal_bcs', [$startDate, $endDate])->where('status', 'outstanding')->count();
-        $achievement = $total > 0 ? round(($complete / $total) * 100, 2) : 0;
+        $pending     = $outstanding;
+        $completePercentage = $total > 0 ? round(($complete / $total) * 100, 1) : 0;
+        $overduePercentage  = $total > 0 ? round(($overdue / $total) * 100, 1) : 0;
+        $achievement = 0;
 
         $data = DB::table('tb_backlog_daily')
             ->select('status', DB::raw('count(*) as total'))
@@ -66,9 +69,9 @@ class ReportController extends Controller
             ->get();
 
         return view('report.backlog-achievement', compact(
-            'data', 'total', 'complete', 'pending', 'outstanding',
+            'data', 'total', 'complete', 'pending', 'outstanding', 'overdue',
             'achievement', 'startDate', 'endDate', 'month', 'year',
-            'availableMonths'
+            'availableMonths', 'completePercentage', 'overduePercentage'
         ));
     }
 
@@ -78,23 +81,24 @@ class ReportController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate   = $request->input('end_date', now()->endOfMonth()->toDateString());
 
-        $vendors = TbVendor::withCount([
-                'backlogDaily as total_supplies' => function($query) use ($startDate, $endDate) {
-                    $query->whereBetween('tanggal', [$startDate, $endDate]);
-                },
-                'backlogDaily as ready_supplies' => function($query) use ($startDate, $endDate) {
-                    $query->whereBetween('tanggal', [$startDate, $endDate])
-                          ->where('is_ready', true);
-                }
-            ])
+        $vendors = DB::table('tb_backlog_daily')
+            ->select(
+                'unit',
+                DB::raw('COUNT(*) as total_supplies'),
+                DB::raw('SUM(CASE WHEN remarks LIKE "%READY ONSITE%" THEN 1 ELSE 0 END) as ready_supplies'),
+                DB::raw('SUM(CASE WHEN remarks LIKE "%NOT READY%" THEN 1 ELSE 0 END) as not_ready')
+            )
+            ->whereBetween('tanggal_bcs', [$startDate, $endDate])
+            ->whereNotIn('status', ['cancel'])
+            ->groupBy('unit')
+            ->orderBy('unit')
             ->get()
-            ->map(function($vendor) {
-                $vendor->fulfillment_rate = $vendor->total_supplies > 0
-                    ? round(($vendor->ready_supplies / $vendor->total_supplies) * 100, 2)
+            ->map(function($item) {
+                $item->fulfillment_rate = $item->total_supplies > 0
+                    ? round(($item->ready_supplies / $item->total_supplies) * 100, 2)
                     : 0;
-                return $vendor;
-            })
-            ->sortByDesc('fulfillment_rate');
+                return $item;
+            });
 
         return view('report.vendor-performance', compact('vendors', 'startDate', 'endDate'));
     }

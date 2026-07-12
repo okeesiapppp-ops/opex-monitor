@@ -15,7 +15,7 @@
         border-radius: 14px;
         padding: 22px 24px;
         position: relative;
-        overflow: hidden;
+        overflow: visible;
         border: none;
         box-shadow: 0 4px 15px rgba(0,0,0,0.12);
     }
@@ -266,8 +266,8 @@
                     </div>
                     <div class="col-3">
                         <div class="achievement-stat">
-                            <div class="num" style="color: #546e7a;">{{ $totalPending }}</div>
-                            <div class="lbl">On Progress</div>
+                            <div class="num" style="color: #546e7a;">{{ $totalOverdue }}</div>
+                            <div class="lbl">Overdue</div>
                         </div>
                     </div>
                 </div>
@@ -315,16 +315,23 @@
                     <span class="badge badge-info ml-2" style="border-radius: 20px;">{{ request('unit') }}</span>
                 @endif
                 @if(request('status'))
-                    <span class="badge badge-secondary ml-1" style="border-radius: 20px;">{{ request('status') == 'pending' ? 'On Progress' : 'Outstanding' }}</span>
+                    <span class="badge badge-secondary ml-1" style="border-radius: 20px;">{{ request('status') == 'overdue' ? 'Overdue' : 'Outstanding' }}</span>
                 @endif
             </h6>
             <div>
                 <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalImport" style="border-radius: 8px; font-size: 12px;">
                     <i class="fas fa-file-excel mr-1"></i> Import Excel
                 </button>
-                <a href="{{ route('backlog-daily.export-excel') }}" class="btn btn-success btn-sm" style="border-radius: 8px; font-size: 12px;">
-                    <i class="fas fa-download mr-1"></i> Export Excel
-                </a>
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-success btn-sm dropdown-toggle" type="button" data-toggle="dropdown" style="border-radius: 8px; font-size: 12px;">
+                        <i class="fas fa-download mr-1"></i> Export Excel
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{{ route('dashboard.export-excel') }}?type=all"><i class="fas fa-table mr-1"></i> Export Semua Data</a>
+                        <a class="dropdown-item" href="{{ route('dashboard.export-excel') }}?type=outstanding"><i class="fas fa-exclamation-circle mr-1"></i> Export Outstanding</a>
+                        <a class="dropdown-item" href="{{ route('dashboard.export-excel') }}?type=overdue"><i class="fas fa-clock mr-1"></i> Export Overdue</a>
+                    </div>
+                </div>
                 <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#modalHapus" style="border-radius: 8px; font-size: 12px;">
                     <i class="fas fa-trash mr-1"></i> Hapus Data
                 </button>
@@ -333,45 +340,65 @@
     </div>
     <div class="card-body">
 
-        <form method="GET" action="{{ route('dashboard') }}" class="mb-3">
-            <div class="row">
-                <div class="col-md-3">
-                    <select name="unit" class="form-control filter-form" onchange="this.form.submit()">
-                        <option value="">-- Filter Unit --</option>
-                        @foreach($unitList as $u)
-                            <option value="{{ $u }}" {{ request('unit') == $u ? 'selected' : '' }}>{{ $u }}</option>
-                        @endforeach
-                    </select>
+        <form method="GET" action="{{ route('dashboard') }}" class="mb-3" id="filter-form">
+            <div class="d-flex align-items-center" style="gap:8px;">
+                <div class="dropdown">
+                    <button class="btn btn-dark" type="button" onclick="toggleFilter()" style="border-radius:8px;font-size:13px;background:#1A202C;border-color:#1A202C;">
+                        <i class="fas fa-filter mr-1"></i> Filter
+                        @if(request('unit') || request('status') || request('reservation'))
+                            <span class="badge badge-warning ml-1" style="font-size:10px;">Aktif</span>
+                        @endif
+                    </button>
+                    <div class="dropdown-menu p-3" id="filter-dropdown" style="min-width:280px;border-radius:8px;display:none;position:fixed;z-index:99999;background:#fff;border:1px solid #e0e0e0;padding:16px;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-height:80vh;overflow-y:auto;">
+                        <p class="mb-2" style="font-weight:600;font-size:13px;">Filter Data</p>
+                        <div class="mb-2">
+                            <label style="font-size:12px;color:#666;">Unit</label>
+                            <select name="unit" class="form-control form-control-sm">
+                                <option value="">-- Semua Unit --</option>
+                                @foreach($unitList as $u)
+                                    <option value="{{ $u }}" {{ request('unit') == $u ? 'selected' : '' }}>{{ $u }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label style="font-size:12px;color:#666;">Status</label>
+                            <select name="status" class="form-control form-control-sm">
+                                <option value="">-- Semua Status --</option>
+                                <option value="outstanding" {{ request('status') == 'outstanding' ? 'selected' : '' }}>Outstanding</option>
+                                <option value="overdue" {{ request('status') == 'overdue' ? 'selected' : '' }}>Overdue</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label style="font-size:12px;color:#666;">Reservation</label>
+                            <input type="text" name="reservation" class="form-control form-control-sm" placeholder="No. reservation..." value="{{ request('reservation') }}">
+                        </div>
+                        <div class="d-flex" style="gap:6px;">
+                            <button type="submit" class="btn btn-dark btn-sm flex-fill" style="border-radius:6px;background:#1A202C;">Terapkan</button>
+                            <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary btn-sm flex-fill" style="border-radius:6px;">Reset</a>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <select name="status" class="form-control filter-form" onchange="this.form.submit()">
-                        <option value="">-- Filter Status --</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>On Progress</option>
-                        <option value="outstanding" {{ request('status') == 'outstanding' ? 'selected' : '' }}>Outstanding</option>
-                    </select>
+                <div style="max-width:300px;flex:1;">
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="search" class="form-control" placeholder="Cari deskripsi, part number..." autocomplete="off" value="{{ request('search') }}" style="border-radius:8px 0 0 8px;font-size:13px;">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-dark" style="border-radius:0 8px 8px 0;background:#1A202C;"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
                 </div>
-                @if(request('unit') || request('status'))
-                <div class="col-md-2 d-flex align-items-center">
-                    <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 8px; font-size: 12px;">
-                        <i class="fas fa-times mr-1"></i> Reset
-                    </a>
-                </div>
-                @endif
             </div>
         </form>
-
+<script>function toggleFilter(){var d=document.getElementById("filter-dropdown");var btn=event.currentTarget;var rect=btn.getBoundingClientRect();if(d.style.display==="none"){d.style.top=(rect.bottom+4)+"px";d.style.left=rect.left+"px";d.style.display="block";}else{d.style.display="none";}}</script>
         <div class="mb-2" id="bulk-actions" style="display:none;">
             <button type="button" class="btn btn-success btn-sm" id="btn-complete" style="border-radius: 8px;">
                 <i class="fas fa-check mr-1"></i> Tandai Complete
             </button>
-            <button type="button" class="btn btn-warning btn-sm" id="btn-outstanding" style="border-radius: 8px;">
-                <i class="fas fa-exclamation-circle mr-1"></i> Tandai Outstanding
-            </button>
+
             <span class="ml-2 text-muted" id="selected-count" style="font-size: 12px;">0 data dipilih</span>
         </div>
 
         <div class="table-responsive">
-            <table class="table table-monitoring table-hover" id="tabel-monitoring">
+            <table class="table table-monitoring table-hover" style="font-size:11px;" id="tabel-monitoring">
                 <thead>
                     <tr>
                         <th style="width:30px;"><input type="checkbox" id="select-all"></th>
@@ -386,6 +413,11 @@
                         <th>Jarak Eksekusi</th>
                         <th>Tgl BCS</th>
                         <th>Remarks</th>
+                        <th>ETA</th>
+                        <th>Posisi Part</th>
+                        <th>Ref. Dokumen</th>
+                        <th>Material</th>
+                        <th>Qty ZBOH</th>
                         <th>Status</th>
                         <th>Aksi</th>
                     </tr>
@@ -431,32 +463,45 @@
                         <td>{{ $item->tanggal_bcs ? \Carbon\Carbon::parse($item->tanggal_bcs)->format('d/m/Y') : '-' }}</td>
                         <td>
                             <input type="text"
-                                class="form-control remarks-input"
+                                class="form-control remarks-input" style="width:100px; font-size:11px;"
                                 data-id="{{ $item->id }}"
                                 value="{{ $item->remarks ?? '' }}"
                                 placeholder="Remarks..."
                                 readonly>
                         </td>
                         <td>
+                            @if($item->eta)
+                                <input type="date" class="form-control form-control-sm eta-input" data-id="{{ $item->id }}" value="{{ \Carbon\Carbon::parse($item->eta)->format('Y-m-d') }}" style="width:120px; border-radius:6px; font-size:11px;">
+                            @else
+                                <input type="date" class="form-control form-control-sm eta-input" data-id="{{ $item->id }}" style="width:120px; border-radius:6px; font-size:11px;">
+                            @endif
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm posisi-input" data-id="{{ $item->id }}" value="{{ $item->posisi ?? '' }}" placeholder="Posisi part..." style="width:130px; border-radius:6px; font-size:11px;">
+                        </td>
+                        <td>{{ $item->referensi_dokumen ?? '-' }}</td>
+                        <td>{{ $item->material ?? '-' }}</td>
+                        <td>{{ $item->qty_zboh ?? '-' }}</td>
+                        <td>
                             @if($item->status == 'complete')
                                 <span class="badge badge-success" style="border-radius: 20px; padding: 5px 10px;">Complete</span>
                             @elseif($item->status == 'outstanding')
                                 <span class="badge badge-warning" style="border-radius: 20px; padding: 5px 10px;">Outstanding</span>
+                            @elseif($item->status == 'overdue')
+                                <span class="badge badge-danger" style="border-radius: 20px; padding: 5px 10px;">Overdue</span>
                             @else
                                 <span class="badge badge-secondary" style="border-radius: 20px; padding: 5px 10px;">On Progress</span>
                             @endif
                         </td>
                         <td>
+                            @if($item->status != 'overdue')
                             <button type="button" class="btn btn-success btn-xs btn-action"
                                 data-id="{{ $item->id }}" data-status="complete" title="Complete"
                                 style="border-radius: 6px; padding: 3px 7px;">
                                 <i class="fas fa-check"></i>
                             </button>
-                            <button type="button" class="btn btn-warning btn-xs btn-action"
-                                data-id="{{ $item->id }}" data-status="outstanding" title="Outstanding"
-                                style="border-radius: 6px; padding: 3px 7px;">
-                                <i class="fas fa-exclamation-circle"></i>
-                            </button>
+                            @endif
+
                         </td>
                     </tr>
                     @empty
@@ -505,9 +550,14 @@
                         <input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required style="border-radius: 8px;">
                     </div>
                     <div class="form-group">
-                        <label style="font-size: 13px; font-weight: 600;">File Excel (.xlsx / .xls)</label>
+                        <label style="font-size: 13px; font-weight: 600;">File Excel BCS (.xlsx / .xls)</label>
                         <input type="file" name="file" class="form-control-file" accept=".xlsx,.xls" required>
                         <small class="text-muted">Format: file BCS dari SM. Maks 5MB.</small>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 13px; font-weight: 600;">File ZBOH (.xlsx / .xls) <span class="text-muted" style="font-weight:400;">(opsional)</span></label>
+                        <input type="file" name="file_zboh" class="form-control-file" accept=".xlsx,.xls">
+                        <small class="text-muted">Upload file ZBOH untuk auto-fill Remarks & Qty ZBOH.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -578,6 +628,36 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    // ETA input handler
+    $(document).on('change', '.eta-input', function() {
+        var id = $(this).data('id');
+        var eta = $(this).val();
+        $.ajax({
+            url: '/backlog-daily/' + id + '/update-eta',
+            method: 'POST',
+            data: { _token: '{{ csrf_token() }}', eta: eta },
+            success: function(response) {
+                if (response.success) { console.log('ETA updated'); }
+            },
+            error: function() { alert('Gagal update ETA!'); }
+        });
+    });
+
+    // Posisi input handler
+    $(document).on('change', '.posisi-input', function() {
+        var id = $(this).data('id');
+        var posisi = $(this).val();
+        $.ajax({
+            url: '/backlog-daily/' + id + '/update-posisi',
+            method: 'POST',
+            data: { _token: '{{ csrf_token() }}', posisi: posisi },
+            success: function(response) {
+                if (response.success) { console.log('Posisi updated'); }
+            },
+            error: function() { alert('Gagal update Posisi!'); }
+        });
+    });
+
 
     // SELECT ALL
     $('#select-all').on('change', function() {
@@ -603,11 +683,7 @@ $(document).ready(function() {
         if (ids.length === 0) return;
         if (confirm('Tandai ' + ids.length + ' data sebagai Complete?')) updateStatus(ids, 'complete');
     });
-    $('#btn-outstanding').on('click', function() {
-        var ids = getSelectedIds();
-        if (ids.length === 0) return;
-        if (confirm('Tandai ' + ids.length + ' data sebagai Outstanding?')) updateStatus(ids, 'outstanding');
-    });
+
     function getSelectedIds() {
         var ids = [];
         $('.row-checkbox:checked').each(function() { ids.push($(this).val()); });
@@ -726,5 +802,7 @@ $(document).ready(function() {
         });
     }
 });
+
+
 </script>
 @endpush

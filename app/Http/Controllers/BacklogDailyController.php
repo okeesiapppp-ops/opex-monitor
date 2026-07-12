@@ -22,14 +22,25 @@ class BacklogDailyController extends Controller
 
         $tanggalFilter = $request->input('tanggal', now()->format('Y-m-d'));
 
-        $query = TbBacklogDaily::query();
+        $query = TbBacklogDaily::whereNotIn('status', ['cancel']);
 
-        if ($request->filled('tanggal')) {
+        if ($request->filled('tanggal') && !$request->filled('search') && !$request->filled('reservation')) {
             $query->whereDate('tanggal_bcs', $request->tanggal);
         }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+        if ($request->filled('unit')) {
+            $query->where('unit', $request->unit);
+        }
+        if ($request->filled('reservation')) {
+            $query->where('reservation_number', 'like', '%'.$request->reservation.'%');
+        }
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('mo_description', 'like', '%'.$request->search.'%')->orWhere('part_number', 'like', '%'.$request->search.'%')->orWhere('reservation_number', 'like', '%'.$request->search.'%')->orWhere('unit', 'like', '%'.$request->search.'%');
+            });
         }
 
         $backlogDaily = $query->latest()->paginate(20);
@@ -51,14 +62,15 @@ class BacklogDailyController extends Controller
             'total'       => TbBacklogDaily::count(),
             'complete'    => TbBacklogDaily::where('status', 'complete')->count(),
             'outstanding' => TbBacklogDaily::where('status', 'outstanding')->count(),
-            'pending'     => TbBacklogDaily::where('status', 'pending')->count(),
+            'overdue'     => TbBacklogDaily::where('status', 'overdue')->count(),
         ];
 
         $vendors  = collect();
         $planners = collect();
 
+        $unitList = TbBacklogDaily::whereNotNull('unit')->distinct()->pluck('unit')->sort()->values();
         return view('backlog-daily.index', compact(
-            'backlogDaily', 'vendors', 'planners', 'stats', 'tanggalFilter'
+            'backlogDaily', 'vendors', 'planners', 'stats', 'tanggalFilter', 'unitList'
         ));
     }
 
@@ -74,9 +86,9 @@ class BacklogDailyController extends Controller
         DB::table('tb_backlog_daily')
             ->whereNotNull('plan_date')
             ->whereDate('plan_date', '<', $today)
-            ->where('status', 'pending')
+            ->where('status', 'outstanding')
             ->update([
-                'status'     => 'outstanding',
+                'status'     => 'overdue',
                 'updated_at' => now(),
             ]);
     }
@@ -85,22 +97,68 @@ class BacklogDailyController extends Controller
     public function importExcel(Request $request)
     {
         $request->validate([
-            'file'    => 'required|mimes:xlsx,xls|max:5120',
-            'tanggal' => 'required|date',
+            'file'      => 'required|mimes:xlsx,xls|max:5120',
+            'tanggal'   => 'required|date',
+            'file_zboh' => 'nullable|mimes:xlsx,xls|max:5120',
         ]);
-
         try {
             Excel::import(new BacklogDailyImport($request->tanggal), $request->file('file'));
-
-            // ✅ Setelah import, langsung cek outstanding otomatis
             $this->autoUpdateOutstanding();
-
+            if ($request->hasFile('file_zboh')) {
+                $this->processZboh($request->file('file_zboh'));
+            }
             return redirect()->route('dashboard')->with('success', 'Data BCS berhasil diimport!');
         } catch (\Exception $e) {
             return redirect()->route('dashboard')->with('error', 'Gagal import: ' . $e->getMessage());
         }
     }
 
+    private function processZboh($file)
+    {
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+        $headers = null;
+        foreach ($rows as $i => $row) {
+            if ($headers === null) {
+                $rowLower = array_map('strtolower', array_map('trim', array_map('strval', $row)));
+                if (in_array('material', $rowLower)) {
+                    $headers = $rowLower;
+                }
+                continue;
+            }
+            $data = array_combine($headers, $row);
+            $material = trim(strval($data['material'] ?? ''));
+            $refDok   = trim(strval($data['reference document'] ?? ''));
+            $qty      = (int)($data['quantity'] ?? 0);
+            if (empty($material)) continue;
+            $items = \App\Models\TbBacklogDaily::where(function($q) use ($material) {
+                    $q->where('part_number', $material)
+                      ->orWhere('part_number', 'P-' . $material)
+                      ->orWhere('part_number', 'P' . $material);
+                })
+                ->whereNotIn('status', ['complete', 'cancel'])
+                ->get();
+            foreach ($items as $item) {
+                $qtyPama = (int)$item->qty;
+                $remarks = $qty >= $qtyPama ? 'READY ONSITE' : 'NOT READY ONSITE';
+                $item->update([
+                    'referensi_dokumen' => $refDok,
+                    'material'          => $material,
+                    'qty_zboh'          => $qty,
+                    'remarks'           => $remarks,
+                ]);
+            }
+        }
+    }
+
+
+    public function destroyFromCancel($id)
+    {
+        $item = TbBacklogDaily::findOrFail($id);
+        $item->delete();
+        return redirect()->route('cancel.index')->with('success', 'Data berhasil dihapus!');
+    }
     // Export Excel
     public function exportExcel(Request $request)
     {

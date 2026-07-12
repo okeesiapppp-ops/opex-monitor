@@ -175,7 +175,7 @@
                         <th>Total Backlog</th>
                         <th>Complete</th>
                         <th>Pending</th>
-                        <th>Outstanding</th>
+                        <th>Overdue</th>
                         <th>Achievement</th>
                         <th>Aksi</th>
                     </tr>
@@ -203,12 +203,12 @@
                         </td>
                         <td>
                             <span class="badge badge-secondary" style="border-radius: 20px; padding: 5px 10px; font-size: 12px;">
-                                {{ $archive->total_pending }}
+                                {{ $archive->total_outstanding ?? 0 }}
                             </span>
                         </td>
                         <td>
                             <span class="badge badge-warning" style="border-radius: 20px; padding: 5px 10px; font-size: 12px;">
-                                {{ $archive->total_outstanding ?? 0 }}
+                                {{ $archive->total_overdue ?? 0 }}
                             </span>
                         </td>
                         <td>
@@ -227,6 +227,7 @@
                                 style="border-radius: 6px; padding: 4px 8px;">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            @if(Auth::user()->role == 'admin')
                             <form action="{{ route('archive.destroy', $archive->id) }}" method="POST"
                                 class="d-inline" onsubmit="return confirm('Yakin hapus archive ini?')">
                                 @csrf @method('DELETE')
@@ -235,6 +236,7 @@
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>
+                            @endif
                         </td>
                     </tr>
                     @empty

@@ -69,7 +69,7 @@ class ArchiveController extends Controller
             ->where('status', 'complete')
             ->count();
         $totalPending = TbBacklog::whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'pending')
+            ->where('status', 'outstanding')
             ->count();
         $totalCancelled = TbBacklog::whereBetween('created_at', [$startDate, $endDate])
             ->where('status', 'cancelled')
@@ -140,7 +140,7 @@ class ArchiveController extends Controller
             ->where('status', 'complete')
             ->count();
         $totalPending = TbBacklog::whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'pending')
+            ->where('status', 'outstanding')
             ->count();
         $totalCancelled = TbBacklog::whereBetween('created_at', [$startDate, $endDate])
             ->where('status', 'cancelled')

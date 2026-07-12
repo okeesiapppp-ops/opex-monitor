@@ -161,9 +161,10 @@
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Vendor</th>
-                        <th>Total Supplies</th>
-                        <th>Ready</th>
+                        <th>Unit</th>
+                        <th>Total Part</th>
+                        <th>Ready Onsite</th>
+                        <th>Not Ready</th>
                         <th>Fulfillment Rate</th>
                         <th>Progress</th>
                     </tr>
@@ -172,34 +173,14 @@
                     @forelse($vendors as $i => $vendor)
                     <tr>
                         <td>{{ $i + 1 }}</td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #e8f0fe; display: flex; align-items: center; justify-content: center; margin-right: 10px; flex-shrink: 0;">
-                                    <i class="fas fa-truck" style="color: #1a73e8; font-size: 14px;"></i>
-                                </div>
-                                <span class="vendor-name">{{ $vendor->name }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge badge-info" style="border-radius: 20px; padding: 5px 12px; font-size: 12px;">
-                                {{ $vendor->total_supplies }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge badge-success" style="border-radius: 20px; padding: 5px 12px; font-size: 12px;">
-                                {{ $vendor->ready_supplies }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="rate-badge rate-{{ $vendor->fulfillment_rate >= 90 ? 'success' : ($vendor->fulfillment_rate >= 70 ? 'warning' : 'danger') }}">
-                                {{ $vendor->fulfillment_rate }}%
-                            </span>
-                        </td>
-                        <td style="min-width: 180px;">
+                        <td><span class="vendor-name">{{ $vendor->unit }}</span></td>
+                        <td><span class="badge badge-info" style="border-radius:20px;padding:5px 12px;font-size:12px;">{{ $vendor->total_supplies }}</span></td>
+                        <td><span class="badge badge-success" style="border-radius:20px;padding:5px 12px;font-size:12px;">{{ $vendor->ready_supplies }}</span></td>
+                        <td><span class="badge badge-danger" style="border-radius:20px;padding:5px 12px;font-size:12px;">{{ $vendor->not_ready }}</span></td>
+                        <td><span class="rate-badge rate-{{ $vendor->fulfillment_rate >= 90 ? 'success' : ($vendor->fulfillment_rate >= 70 ? 'warning' : 'danger') }}">{{ $vendor->fulfillment_rate }}%</span></td>
+                        <td style="min-width:180px;">
                             <div class="fulfillment-bar">
-                                <div class="bar-fill" style="width: {{ $vendor->fulfillment_rate }}%; background:
-                                    {{ $vendor->fulfillment_rate >= 90 ? '#2e7d32' : ($vendor->fulfillment_rate >= 70 ? '#f57c00' : '#c62828') }};">
-                                </div>
+                                <div class="bar-fill" style="width:{{ $vendor->fulfillment_rate }}%;background:{{ $vendor->fulfillment_rate >= 90 ? '#2e7d32' : ($vendor->fulfillment_rate >= 70 ? '#f57c00' : '#c62828') }};"></div>
                             </div>
                         </td>
                     </tr>

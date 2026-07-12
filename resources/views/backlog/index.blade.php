@@ -42,7 +42,7 @@
                         <label>Status</label>
                         <select name="status" class="form-control">
                             <option value="">Semua</option>
-                            <option value="pending" {{ request('status')=='pending'?'selected':'' }}>Pending</option>
+                            <option value="overdue" {{ request('status')=='overdue'?'selected':'' }}>Pending</option>
                             <option value="in_progress" {{ request('status')=='in_progress'?'selected':'' }}>In Progress</option>
                             <option value="complete" {{ request('status')=='complete'?'selected':'' }}>Complete</option>
                             <option value="cancelled" {{ request('status')=='cancelled'?'selected':'' }}>Cancelled</option>
@@ -134,7 +134,7 @@
                         <td>
                             @php
                                 $statusBadge = match($backlog->status) {
-                                    'pending' => 'warning',
+                                    'overdue' => 'warning',
                                     'in_progress' => 'info',
                                     'complete' => 'success',
                                     'cancelled' => 'danger',

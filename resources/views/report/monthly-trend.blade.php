@@ -144,18 +144,18 @@
 </div>
 
 {{-- Grafik --}}
-<p class="section-title"><i class="fas fa-chart-bar mr-2"></i>Grafik Complete vs Outstanding {{ $year }}</p>
+<p class="section-title"><i class="fas fa-chart-bar mr-2"></i>Grafik Complete vs Overdue {{ $year }}</p>
 <div class="card mb-3">
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
             <h6 class="mb-0 font-weight-bold">
-                <i class="fas fa-chart-bar mr-2 text-primary"></i> Complete vs Outstanding {{ $year }}
+                <i class="fas fa-chart-bar mr-2 text-primary"></i> Complete vs Overdue {{ $year }}
             </h6>
             <div>
                 <span class="legend-dot" style="background: #2e7d32;"></span>
                 <small class="text-muted mr-3">Complete</small>
                 <span class="legend-dot" style="background: #f57c00;"></span>
-                <small class="text-muted">Outstanding</small>
+                <small class="text-muted">Overdue</small>
             </div>
         </div>
     </div>
@@ -190,8 +190,7 @@
                         <th>Total Backlog</th>
                         <th>Complete</th>
                         <th>Pending</th>
-                        <th>Outstanding</th>
-                        <th>Achievement</th>
+                        <th>Overdue</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -199,7 +198,7 @@
                         $months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
                     @endphp
                     @forelse($trend as $t)
-                    @php $outstanding = $t->total_backlog - $t->complete - $t->pending; @endphp
+                    @php $overdue = $t->total_backlog - $t->complete - $t->pending; @endphp
                     <tr>
                         <td>
                             <span class="periode-badge">
@@ -223,25 +222,13 @@
                         </td>
                         <td>
                             <span class="badge badge-warning" style="border-radius: 20px; padding: 5px 12px; font-size: 12px;">
-                                {{ $outstanding }}
+                                {{ $overdue }}
                             </span>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="achievement-bar" style="width: 120px;">
-                                    <div class="bar-fill" style="width: {{ $t->achievement }}%; background:
-                                        {{ $t->achievement >= 95 ? '#2e7d32' : ($t->achievement >= 90 ? '#f57c00' : '#c62828') }};">
-                                    </div>
-                                </div>
-                                <span class="rate-badge rate-{{ $t->achievement >= 95 ? 'success' : ($t->achievement >= 90 ? 'warning' : 'danger') }}">
-                                    {{ $t->achievement }}%
-                                </span>
-                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-5">
+                        <td colspan="5" class="text-center text-muted py-5">
                             <i class="fas fa-inbox fa-2x mb-2 d-block" style="opacity: 0.3;"></i>
                             Tidak ada data untuk tahun {{ $year }}
                         </td>
@@ -261,11 +248,11 @@
     $months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     $labels = [];
     $completeData = [];
-    $outstandingData = [];
+    $overdueData = [];
     foreach ($trend as $t) {
         $labels[] = $months[$t->month - 1] . ' ' . $t->year;
         $completeData[] = $t->complete;
-        $outstandingData[] = $t->total_backlog - $t->complete - $t->pending;
+        $overdueData[] = $t->total_backlog - $t->complete - $t->pending;
     }
 @endphp
 
@@ -286,8 +273,8 @@ if (trendCtx) {
                     borderSkipped: false,
                 },
                 {
-                    label: 'Outstanding',
-                    data: @json($outstandingData),
+                    label: 'Overdue',
+                    data: @json($overdueData),
                     backgroundColor: 'rgba(245,124,0,0.85)',
                     borderColor: '#f57c00',
                     borderWidth: 1,

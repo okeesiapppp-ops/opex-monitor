@@ -9,41 +9,50 @@
 @section('content')
 
 <!-- Statistik -->
-<div class="row">
-    <div class="col-md-3">
-        <div class="small-box bg-info">
-            <div class="inner">
-                <h3>{{ $archive->total_backlog }}</h3>
-                <p>Total Backlog</p>
-            </div>
-            <div class="icon"><i class="fas fa-clipboard-list"></i></div>
+<style>
+.stat-card { border-radius: 14px; padding: 20px 22px; position: relative; overflow: hidden; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.12); height: 100%; }
+.stat-card .stat-icon { position: absolute; right: 18px; top: 18px; font-size: 2.8rem; opacity: 0.15; }
+.stat-card .stat-number { font-size: 2.2rem; font-weight: 800; margin-bottom: 2px; line-height: 1; }
+.stat-card .stat-label { font-size: 13px; font-weight: 600; opacity: 0.75; margin-bottom: 0; }
+.stat-card.bg-total { background: #FFD700; color: #1A202C; }
+.stat-card.bg-total .stat-icon { color: #1A202C; }
+.stat-card.bg-complete { background: #1A202C; color: #FFD700; }
+.stat-card.bg-complete .stat-icon { color: #FFD700; }
+.stat-card.bg-complete .stat-label { color: #A0AEC0; opacity: 1; }
+.stat-card.bg-overdue { background: #FFFFFF; color: #1A202C; border: 1.5px solid #FED7D7 !important; }
+.stat-card.bg-overdue .stat-number { color: #E53E3E; }
+.stat-card.bg-overdue .stat-icon { color: #E53E3E; }
+.stat-card.bg-outstanding { background: #F7FAFC; color: #1A202C; border: 1.5px solid #E2E8F0 !important; }
+.stat-card.bg-outstanding .stat-number { color: #4A5568; }
+.stat-card.bg-outstanding .stat-icon { color: #4A5568; }
+</style>
+<div class="row mb-3">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card bg-total">
+            <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+            <div class="stat-number">{{ $archive->total_backlog }}</div>
+            <div class="stat-label">Total Backlog</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="small-box bg-success">
-            <div class="inner">
-                <h3>{{ $archive->total_complete }}</h3>
-                <p>Complete</p>
-            </div>
-            <div class="icon"><i class="fas fa-check-circle"></i></div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card bg-complete">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-number">{{ $archive->total_complete }}</div>
+            <div class="stat-label">Complete</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="small-box bg-warning">
-            <div class="inner">
-                <h3>{{ $archive->total_outstanding ?? 0 }}</h3>
-                <p>Outstanding</p>
-            </div>
-            <div class="icon"><i class="fas fa-exclamation-circle"></i></div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card bg-outstanding">
+            <div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stat-number">{{ $archive->total_outstanding ?? 0 }}</div>
+            <div class="stat-label">Outstanding</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="small-box bg-secondary">
-            <div class="inner">
-                <h3>{{ $archive->total_pending }}</h3>
-                <p>Pending</p>
-            </div>
-            <div class="icon"><i class="fas fa-spinner"></i></div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card bg-overdue">
+            <div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stat-number">{{ $archive->total_overdue ?? 0 }}</div>
+            <div class="stat-label">Overdue</div>
         </div>
     </div>
 </div>

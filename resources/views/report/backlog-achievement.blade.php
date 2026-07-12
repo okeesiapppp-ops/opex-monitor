@@ -244,7 +244,7 @@
         min-width: 120px;
     }
     .prop-complete    { background: linear-gradient(90deg, #48BB78, #276749); height: 8px; border-radius: 4px; }
-    .prop-outstanding { background: linear-gradient(90deg, #FC8181, #C53030); height: 8px; border-radius: 4px; }
+    .prop-overdue { background: linear-gradient(90deg, #FC8181, #C53030); height: 8px; border-radius: 4px; }
     .prop-pending     { background: linear-gradient(90deg, #A0AEC0, #4A5568); height: 8px; border-radius: 4px; }
 </style>
 @endpush
@@ -324,10 +324,10 @@
         </div>
     </div>
     <div class="col-md-4 mb-3">
-        <div class="stat-card bg-{{ $achievement >= 95 ? 'success-ach' : ($achievement >= 70 ? 'warning-ach' : 'danger-ach') }}">
-            <div class="stat-icon"><i class="fas fa-percent"></i></div>
-            <div class="stat-number">{{ $achievement }}%</div>
-            <div class="stat-label">Achievement</div>
+        <div class="stat-card" style="background:#FFFFFF;border:1.5px solid #FED7D7;box-shadow:0 4px 15px rgba(229,62,62,0.1);">
+            <div class="stat-icon" style="color:#E53E3E;"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stat-number" style="color:#E53E3E;">{{ $overdue }}</div>
+            <div class="stat-label" style="color:#718096;">Overdue</div>
         </div>
     </div>
 </div>
@@ -359,10 +359,10 @@
                         @php $pct = $total > 0 ? round(($row->total / $total) * 100, 2) : 0; @endphp
                         <tr>
                             <td>
-                                @if($row->status == 'pending')
-                                    <span class="badge badge-secondary" style="border-radius: 20px; padding: 5px 12px;">On Progress</span>
-                                @elseif($row->status == 'outstanding')
-                                    <span class="badge badge-danger" style="border-radius: 20px; padding: 5px 12px;">Outstanding</span>
+                                @if($row->status == 'overdue')
+                                    <span class="badge badge-secondary" style="border-radius: 20px; padding: 5px 12px;">Overdue</span>
+                                @elseif($row->status == 'overdue')
+                                    <span class="badge badge-danger" style="border-radius: 20px; padding: 5px 12px;">Overdue</span>
                                 @elseif($row->status == 'complete')
                                     <span class="badge badge-success" style="border-radius: 20px; padding: 5px 12px;">Complete</span>
                                 @else
@@ -372,8 +372,8 @@
                             <td style="font-weight: 700; color:#1A202C;">{{ $row->total }}</td>
                             <td>
                                 <span class="pct-badge" style="
-                                    background: {{ $row->status == 'complete' ? '#C6F6D5' : ($row->status == 'outstanding' ? '#FED7D7' : '#EDF2F7') }};
-                                    color: {{ $row->status == 'complete' ? '#276749' : ($row->status == 'outstanding' ? '#9B2C2C' : '#4A5568') }};
+                                    background: {{ $row->status == 'complete' ? '#C6F6D5' : ($row->status == 'overdue' ? '#FED7D7' : '#EDF2F7') }};
+                                    color: {{ $row->status == 'complete' ? '#276749' : ($row->status == 'overdue' ? '#9B2C2C' : '#4A5568') }};
                                 ">
                                     {{ $pct }}%
                                 </span>
@@ -382,7 +382,7 @@
                                 <div class="prop-track">
                                     <div class="
                                         @if($row->status == 'complete') prop-complete
-                                        @elseif($row->status == 'outstanding') prop-outstanding
+                                        @elseif($row->status == 'overdue') prop-overdue
                                         @else prop-pending @endif"
                                         style="width: {{ $pct }}%;">
                                     </div>
@@ -403,64 +403,79 @@
         </div>
     </div>
 
-    {{-- Achievement Summary --}}
+    {{-- Comparison Summary --}}
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-header">
                 <h6 class="mb-0 font-weight-bold">
-                    <i class="fas fa-trophy mr-2" style="color:#FFD700;"></i> Achievement Summary
+                    <i class="fas fa-chart-pie mr-2" style="color:#FFD700;"></i> Perbandingan
                 </h6>
             </div>
             <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-4">
-
-                <div class="achievement-ring ring-{{ $achievement >= 95 ? 'success' : ($achievement >= 70 ? 'warning' : 'danger') }}">
-                    {{ $achievement }}%
-                </div>
-
-                <h6 class="font-weight-bold mb-1" style="color:#1A202C;">
-                    @if($achievement >= 95)
-                        <i class="fas fa-check-circle text-success mr-1"></i> Target Tercapai!
-                    @elseif($achievement >= 70)
-                        <i class="fas fa-exclamation-circle text-warning mr-1"></i> Perlu Ditingkatkan
-                    @else
-                        <i class="fas fa-times-circle text-danger mr-1"></i> Di Bawah Target
-                    @endif
-                </h6>
-                <small class="text-muted">Target achievement: <strong>95%</strong></small>
-
-                {{-- Progress bar --}}
-                <div class="mt-3 w-100">
-                    <div class="progress-track">
-                        <div class="progress-fill fill-{{ $achievement >= 95 ? 'success' : ($achievement >= 70 ? 'warning' : 'danger') }}"
-                             style="width: {{ min($achievement, 100) }}%;">
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between mt-1">
-                        <small class="text-muted">0%</small>
-                        <small style="color:#FFD700; font-weight:700;">Target 95%</small>
-                        <small class="text-muted">100%</small>
-                    </div>
-                </div>
-
-                {{-- Detail --}}
                 <div class="mt-3 w-100">
                     <div class="d-flex justify-content-between py-2" style="border-top: 1px solid #f0f0f0;">
                         <small class="text-muted">Total Backlog</small>
-                        <span style="font-weight: 700; font-size: 13px; color:#1A202C;">{{ $total }}</span>
+                        <span style="font-weight:700;font-size:13px;color:#1A202C;">{{ $total }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-2" style="border-top: 1px solid #f0f0f0;">
                         <small class="text-muted">Complete</small>
-                        <span style="font-weight: 700; font-size: 13px; color:#276749;">{{ $complete }}</span>
+                        <span style="font-weight:700;font-size:13px;color:#276749;">{{ $complete }}</span>
                     </div>
                     <div class="d-flex justify-content-between py-2" style="border-top: 1px solid #f0f0f0;">
-                        <small class="text-muted">Belum Complete</small>
-                        <span style="font-weight: 700; font-size: 13px; color:#C53030;">{{ $total - $complete }}</span>
+                        <small class="text-muted">Overdue</small>
+                        <span style="font-weight:700;font-size:13px;color:#C53030;">{{ $overdue }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2" style="border-top: 1px solid #f0f0f0;">
+                        <small class="text-muted">Outstanding</small>
+                        <span style="font-weight:700;font-size:13px;color:#4A5568;">{{ $outstanding }}</span>
                     </div>
                 </div>
-
+            </div>
+        </div>
+    </div>
+</div>
+    <div class="col-md-12 mt-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="mb-0 font-weight-bold">
+                    <i class="fas fa-chart-bar mr-2" style="color:#FFD700;"></i> Perbandingan Complete vs Overdue (Persen)
+                </h6>
+            </div>
+            <div class="card-body">
+                <div style="height:220px;">
+                    <canvas id="completeOverdueBarChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+@push('scripts')
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById("completeOverdueBarChart");
+    if (ctx) {
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: ["Complete", "Overdue"],
+                datasets: [{
+                    label: "Persentase",
+                    data: [{{ $completePercentage }}, {{ $overduePercentage }}],
+                    backgroundColor: ["#28a745", "#dc3545"],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, max: 100, ticks: { callback: function(v){ return v + "%"; } } } }
+            }
+        });
+    }
+});
+</script>
+@endpush
+n
 @endsection

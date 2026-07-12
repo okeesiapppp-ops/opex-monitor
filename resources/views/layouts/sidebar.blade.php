@@ -107,7 +107,7 @@
               border-radius: 8px; font-size: 13px; font-weight: 600;
               padding: 9px 14px; color: #A0AEC0; transition: all .18s ease;
               display: flex; align-items: center; gap: 10px;
-              {{ request()->routeIs('backlog-daily*') && request('status') != 'outstanding' ? 'background: #FFD700 !important; color: #1A202C !important; box-shadow: 0 2px 8px rgba(255,215,0,.35);' : '' }}
+              {{ request()->routeIs('backlog-daily*') && request('status') != 'overdue' ? 'background: #FFD700 !important; color: #1A202C !important; box-shadow: 0 2px 8px rgba(255,215,0,.35);' : '' }}
           ">
             <i class="fas fa-calendar-day" style="width:16px; text-align:center; font-size:13px;"></i>
             <span>Backlog Daily (DPS)</span>
@@ -116,15 +116,15 @@
 
         {{-- ⭐ MENU OUTSTANDING --}}
         <li class="nav-item" style="margin-bottom:2px;">
-          <a href="{{ route('backlog-daily.index') }}?status=outstanding" class="nav-link {{ request()->routeIs('backlog-daily*') && request('status') == 'outstanding' ? 'active' : '' }}" style="
+          <a href="{{ route('backlog-daily.index') }}?status=overdue" class="nav-link {{ request()->routeIs('backlog-daily*') && request('status') == 'overdue' ? 'active' : '' }}" style="
               border-radius: 8px; font-size: 13px; font-weight: 600;
               padding: 9px 14px; color: #A0AEC0; transition: all .18s ease;
               display: flex; align-items: center; justify-content: space-between;
-              {{ request()->routeIs('backlog-daily*') && request('status') == 'outstanding' ? 'background: #E53E3E !important; color: #fff !important; box-shadow: 0 2px 8px rgba(229,62,62,.35);' : '' }}
+              {{ request()->routeIs('backlog-daily*') && request('status') == 'overdue' ? 'background: #E53E3E !important; color: #fff !important; box-shadow: 0 2px 8px rgba(229,62,62,.35);' : '' }}
           ">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fas fa-exclamation-circle" style="width:16px; text-align:center; font-size:13px; color: {{ request('status') == 'outstanding' ? '#fff' : '#FC8181' }};"></i>
-                <span style="color: {{ request('status') == 'outstanding' ? '#fff' : '#FC8181' }}; font-weight:700;">Outstanding</span>
+                <i class="fas fa-exclamation-circle" style="width:16px; text-align:center; font-size:13px; color: {{ request('status') == 'overdue' ? '#fff' : '#FC8181' }};"></i>
+                <span style="color: {{ request('status') == 'overdue' ? '#fff' : '#FC8181' }}; font-weight:700;">Overdue</span>
             </div>
             @if(isset($totalOverdue) && $totalOverdue > 0)
             <span style="
@@ -152,6 +152,17 @@
           ">
             <i class="fas fa-archive" style="width:16px; text-align:center; font-size:13px;"></i>
             <span>Archive</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ route('cancel.index') }}" class="nav-link {{ request()->routeIs('cancel*') ? 'active' : '' }}" style="
+              border-radius: 8px; font-size: 13px; font-weight: 600;
+              padding: 9px 14px; color: #A0AEC0; transition: all .18s ease;
+              display: flex; align-items: center; gap: 10px;
+              {{ request()->routeIs('cancel*') ? 'background: #FFD700 !important; color: #1A202C !important; box-shadow: 0 2px 8px rgba(255,215,0,.35);' : '' }}
+          ">
+            <i class="fas fa-ban" style="width:16px; text-align:center; font-size:13px; color:#E53E3E;"></i>
+            <span>Cancel</span>
           </a>
         </li>
 
@@ -238,11 +249,11 @@
         <li style="padding: 12px 14px 4px; font-size: 10px; font-weight: 800; letter-spacing: 1.2px; color: #4A5568; text-transform: uppercase;">Main Menu</li>
 
         <li class="nav-item" style="margin-bottom:2px;">
-          <a href="{{ route('backlog-daily.index') }}" class="nav-link {{ request()->routeIs('backlog-daily*') && request('status') != 'outstanding' ? 'active' : '' }}" style="
+          <a href="{{ route('backlog-daily.index') }}" class="nav-link {{ request()->routeIs('backlog-daily*') && request('status') != 'overdue' ? 'active' : '' }}" style="
               border-radius: 8px; font-size: 13px; font-weight: 600;
               padding: 9px 14px; color: #A0AEC0; transition: all .18s ease;
               display: flex; align-items: center; gap: 10px;
-              {{ request()->routeIs('backlog-daily*') && request('status') != 'outstanding' ? 'background: #FFD700 !important; color: #1A202C !important; box-shadow: 0 2px 8px rgba(255,215,0,.35);' : '' }}
+              {{ request()->routeIs('backlog-daily*') && request('status') != 'overdue' ? 'background: #FFD700 !important; color: #1A202C !important; box-shadow: 0 2px 8px rgba(255,215,0,.35);' : '' }}
           ">
             <i class="fas fa-calendar-day" style="width:16px; text-align:center; font-size:13px;"></i>
             <span>Backlog For Daily</span>
@@ -251,15 +262,15 @@
 
         {{-- ⭐ OUTSTANDING untuk vendor --}}
         <li class="nav-item" style="margin-bottom:2px;">
-          <a href="{{ route('backlog-daily.index') }}?status=outstanding" class="nav-link {{ request()->routeIs('backlog-daily*') && request('status') == 'outstanding' ? 'active' : '' }}" style="
+          <a href="{{ route('backlog-daily.index') }}?status=overdue" class="nav-link {{ request()->routeIs('backlog-daily*') && request('status') == 'overdue' ? 'active' : '' }}" style="
               border-radius: 8px; font-size: 13px; font-weight: 600;
               padding: 9px 14px; color: #A0AEC0; transition: all .18s ease;
               display: flex; align-items: center; justify-content: space-between;
-              {{ request()->routeIs('backlog-daily*') && request('status') == 'outstanding' ? 'background: #E53E3E !important; color: #fff !important; box-shadow: 0 2px 8px rgba(229,62,62,.35);' : '' }}
+              {{ request()->routeIs('backlog-daily*') && request('status') == 'overdue' ? 'background: #E53E3E !important; color: #fff !important; box-shadow: 0 2px 8px rgba(229,62,62,.35);' : '' }}
           ">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fas fa-exclamation-circle" style="width:16px; text-align:center; font-size:13px; color: {{ request('status') == 'outstanding' ? '#fff' : '#FC8181' }};"></i>
-                <span style="color: {{ request('status') == 'outstanding' ? '#fff' : '#FC8181' }}; font-weight:700;">Outstanding</span>
+                <i class="fas fa-exclamation-circle" style="width:16px; text-align:center; font-size:13px; color: {{ request('status') == 'overdue' ? '#fff' : '#FC8181' }};"></i>
+                <span style="color: {{ request('status') == 'overdue' ? '#fff' : '#FC8181' }}; font-weight:700;">Overdue</span>
             </div>
             <span style="
                 background: rgba(252,129,129,.2); color: #FC8181;
@@ -280,17 +291,28 @@
             <span>Archive Data</span>
           </a>
         </li>
+        <li class="nav-item">
+          <a href="{{ route('cancel.index') }}" class="nav-link {{ request()->routeIs('cancel*') ? 'active' : '' }}" style="
+              border-radius: 8px; font-size: 13px; font-weight: 600;
+              padding: 9px 14px; color: #A0AEC0; transition: all .18s ease;
+              display: flex; align-items: center; gap: 10px;
+              {{ request()->routeIs('cancel*') ? 'background: #FFD700 !important; color: #1A202C !important; box-shadow: 0 2px 8px rgba(255,215,0,.35);' : '' }}
+          ">
+            <i class="fas fa-ban" style="width:16px; text-align:center; font-size:13px; color:#E53E3E;"></i>
+            <span>Cancel</span>
+          </a>
+        </li>
 
         @elseif(Auth::user()->role == 'planner')
 
         <li style="padding: 12px 14px 4px; font-size: 10px; font-weight: 800; letter-spacing: 1.2px; color: #4A5568; text-transform: uppercase;">Main Menu</li>
 
         <li class="nav-item" style="margin-bottom:2px;">
-          <a href="{{ route('backlog-daily.index') }}" class="nav-link {{ request()->routeIs('backlog-daily*') && request('status') != 'outstanding' ? 'active' : '' }}" style="
+          <a href="{{ route('backlog-daily.index') }}" class="nav-link {{ request()->routeIs('backlog-daily*') && request('status') != 'overdue' ? 'active' : '' }}" style="
               border-radius: 8px; font-size: 13px; font-weight: 600;
               padding: 9px 14px; color: #A0AEC0; transition: all .18s ease;
               display: flex; align-items: center; gap: 10px;
-              {{ request()->routeIs('backlog-daily*') && request('status') != 'outstanding' ? 'background: #FFD700 !important; color: #1A202C !important; box-shadow: 0 2px 8px rgba(255,215,0,.35);' : '' }}
+              {{ request()->routeIs('backlog-daily*') && request('status') != 'overdue' ? 'background: #FFD700 !important; color: #1A202C !important; box-shadow: 0 2px 8px rgba(255,215,0,.35);' : '' }}
           ">
             <i class="fas fa-calendar-day" style="width:16px; text-align:center; font-size:13px;"></i>
             <span>Backlog For Daily</span>
@@ -299,15 +321,15 @@
 
         {{-- ⭐ OUTSTANDING untuk planner --}}
         <li class="nav-item" style="margin-bottom:2px;">
-          <a href="{{ route('backlog-daily.index') }}?status=outstanding" class="nav-link {{ request()->routeIs('backlog-daily*') && request('status') == 'outstanding' ? 'active' : '' }}" style="
+          <a href="{{ route('backlog-daily.index') }}?status=overdue" class="nav-link {{ request()->routeIs('backlog-daily*') && request('status') == 'overdue' ? 'active' : '' }}" style="
               border-radius: 8px; font-size: 13px; font-weight: 600;
               padding: 9px 14px; color: #A0AEC0; transition: all .18s ease;
               display: flex; align-items: center; justify-content: space-between;
-              {{ request()->routeIs('backlog-daily*') && request('status') == 'outstanding' ? 'background: #E53E3E !important; color: #fff !important; box-shadow: 0 2px 8px rgba(229,62,62,.35);' : '' }}
+              {{ request()->routeIs('backlog-daily*') && request('status') == 'overdue' ? 'background: #E53E3E !important; color: #fff !important; box-shadow: 0 2px 8px rgba(229,62,62,.35);' : '' }}
           ">
             <div style="display:flex; align-items:center; gap:10px;">
-                <i class="fas fa-exclamation-circle" style="width:16px; text-align:center; font-size:13px; color: {{ request('status') == 'outstanding' ? '#fff' : '#FC8181' }};"></i>
-                <span style="color: {{ request('status') == 'outstanding' ? '#fff' : '#FC8181' }}; font-weight:700;">Outstanding</span>
+                <i class="fas fa-exclamation-circle" style="width:16px; text-align:center; font-size:13px; color: {{ request('status') == 'overdue' ? '#fff' : '#FC8181' }};"></i>
+                <span style="color: {{ request('status') == 'overdue' ? '#fff' : '#FC8181' }}; font-weight:700;">Overdue</span>
             </div>
             <span style="
                 background: rgba(252,129,129,.2); color: #FC8181;
@@ -326,6 +348,17 @@
           ">
             <i class="fas fa-archive" style="width:16px; text-align:center; font-size:13px;"></i>
             <span>Archive</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ route('cancel.index') }}" class="nav-link {{ request()->routeIs('cancel*') ? 'active' : '' }}" style="
+              border-radius: 8px; font-size: 13px; font-weight: 600;
+              padding: 9px 14px; color: #A0AEC0; transition: all .18s ease;
+              display: flex; align-items: center; gap: 10px;
+              {{ request()->routeIs('cancel*') ? 'background: #FFD700 !important; color: #1A202C !important; box-shadow: 0 2px 8px rgba(255,215,0,.35);' : '' }}
+          ">
+            <i class="fas fa-ban" style="width:16px; text-align:center; font-size:13px; color:#E53E3E;"></i>
+            <span>Cancel</span>
           </a>
         </li>
 

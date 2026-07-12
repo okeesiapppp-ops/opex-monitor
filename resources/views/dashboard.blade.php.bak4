@@ -1,0 +1,806 @@
+@extends('layouts.app')
+
+@section('title', 'Dashboard')
+@section('page-title', 'Dashboard')
+
+@section('breadcrumb')
+    <li class="breadcrumb-item active">Dashboard</li>
+@endsection
+
+@push('styles')
+<style>
+    body, .content-wrapper { background: #f4f6f9 !important; }
+
+    .stat-card {
+        border-radius: 14px;
+        padding: 22px 24px;
+        position: relative;
+        overflow: visible;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    }
+    .stat-card .stat-icon {
+        position: absolute;
+        right: 18px;
+        top: 18px;
+        font-size: 2.8rem;
+        opacity: 0.15;
+    }
+    .stat-card .stat-number {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 2px;
+        line-height: 1;
+    }
+    .stat-card .stat-label {
+        font-size: 13px;
+        font-weight: 600;
+        opacity: 0.75;
+        margin-bottom: 12px;
+        letter-spacing: 0.3px;
+    }
+    .stat-card .stat-footer {
+        font-size: 12px;
+        font-weight: 600;
+        border-top: 1px solid rgba(0,0,0,0.08);
+        padding-top: 10px;
+    }
+
+    /* ===== OPSI E: Kuning + Navy + Putih/Merah ===== */
+
+    /* Card 1 — Total Backlog: KUNING */
+    .stat-card.bg-total {
+        background: #FFD700;
+        color: #1A202C;
+    }
+    .stat-card.bg-total .stat-icon { color: #1A202C; opacity: 0.12; }
+    .stat-card.bg-total .stat-footer { border-top-color: rgba(26,32,44,0.12); }
+    .stat-card.bg-total .stat-footer a { color: #1A202C !important; opacity: 0.7; }
+    .stat-card.bg-total .stat-footer a:hover { opacity: 1; }
+
+    /* Card 2 — Backlog Complete: NAVY */
+    .stat-card.bg-complete {
+        background: #1A202C;
+        color: #FFD700;
+    }
+    .stat-card.bg-complete .stat-icon { color: #FFD700; opacity: 0.15; }
+    .stat-card.bg-complete .stat-label { color: #A0AEC0; opacity: 1; }
+    .stat-card.bg-complete .stat-footer { border-top-color: rgba(255,215,0,0.15); }
+    .stat-card.bg-complete .stat-footer a { color: #FFD700 !important; opacity: 0.7; }
+    .stat-card.bg-complete .stat-footer a:hover { opacity: 1; }
+
+    /* Card 3 — Outstanding: PUTIH + border merah */
+    .stat-card.bg-outstanding {
+        background: #FFFFFF;
+        color: #1A202C;
+        border: 1.5px solid #FED7D7 !important;
+        box-shadow: 0 4px 15px rgba(229,62,62,0.1) !important;
+    }
+    .stat-card.bg-outstanding .stat-number { color: #E53E3E; }
+    .stat-card.bg-outstanding .stat-label { color: #718096; opacity: 1; }
+    .stat-card.bg-outstanding .stat-icon { color: #E53E3E; opacity: 0.12; }
+    .stat-card.bg-outstanding .stat-footer { border-top-color: #FED7D7; }
+    .stat-card.bg-outstanding .stat-footer a { color: #E53E3E !important; font-weight: 700; }
+
+    .card {
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+        background: #fff;
+    }
+    .card .card-header {
+        background: #fff;
+        border-bottom: 1px solid #f0f0f0;
+        border-radius: 14px 14px 0 0 !important;
+        padding: 14px 20px;
+    }
+
+    .achievement-stat { text-align: center; padding: 8px 0; }
+    .achievement-stat .num { font-size: 22px; font-weight: 700; line-height: 1; }
+    .achievement-stat .lbl { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .table-monitoring thead th {
+        background: #1A202C;
+        color: #FFD700;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 10px 8px;
+        border: none;
+        white-space: nowrap;
+    }
+    .table-monitoring tbody td {
+        font-size: 12px;
+        padding: 8px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    .table-monitoring tbody tr:hover { background: #FFFFF0; }
+
+    .badge-jarak { font-size: 11px; padding: 4px 9px; border-radius: 20px; font-weight: 600; display: inline-block; }
+    .badge-terlambat { background: #ffebee; color: #c62828; }
+    .badge-hariini   { background: #fff8e1; color: #f57f17; }
+    .badge-belum     { background: #e8f5e9; color: #2e7d32; }
+
+    .filter-form select {
+        border-radius: 8px; border: 1px solid #e0e0e0;
+        font-size: 13px; height: 36px; background: #fff;
+    }
+
+    .pagination .page-item .page-link {
+        border-radius: 6px !important; margin: 0 2px;
+        font-size: 12px; padding: 5px 10px;
+        color: #1A202C; border-color: #e0e0e0;
+    }
+    .pagination .page-item.active .page-link {
+        background: #1A202C; border-color: #1A202C; color: #FFD700;
+    }
+
+    .remarks-input {
+        border-radius: 6px;
+        border: 1px solid #e0e0e0;
+        font-size: 12px;
+        background: #fafafa;
+        cursor: pointer;
+        min-width: 130px;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .remarks-input.editable {
+        background: #fff !important;
+        cursor: text !important;
+        border-color: #E6C200 !important;
+        box-shadow: 0 0 0 2px rgba(255,215,0,0.2) !important;
+    }
+
+    .section-title {
+        font-size: 13px; font-weight: 700; color: #546e7a;
+        text-transform: uppercase; letter-spacing: 0.8px;
+        margin-bottom: 12px; padding-left: 4px;
+    }
+
+    .tanggal-item {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .tanggal-item:hover { border-color: #dc3545; background: #fff5f5; }
+    .tanggal-item.selected { border-color: #dc3545; background: #ffebee; }
+    .tanggal-item .tgl-date { font-weight: 600; font-size: 13px; color: #263238; }
+    .tanggal-item .tgl-ago { font-size: 11px; color: #888; }
+    .tanggal-item .tgl-check { color: #dc3545; display: none; }
+    .tanggal-item.selected .tgl-check { display: block; }
+</style>
+@endpush
+
+@section('content')
+
+{{-- BARIS 1: 3 Kartu Statistik --}}
+<div class="row mb-3">
+    <div class="col-lg-4 col-6 mb-3">
+        <div class="stat-card bg-total">
+            <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+            <div class="stat-number">{{ $totalBacklog }}</div>
+            <div class="stat-label">Total Backlog</div>
+            <div class="stat-footer">
+                <a href="{{ route('backlog-daily.index') }}">
+                    <i class="fas fa-arrow-circle-right mr-1"></i> More info
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-6 mb-3">
+        <div class="stat-card bg-complete">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-number">{{ $totalComplete }}</div>
+            <div class="stat-label">Backlog Complete</div>
+            <div class="stat-footer">
+                <a href="{{ route('backlog-daily.index') }}">
+                    <i class="fas fa-arrow-circle-right mr-1"></i> More info
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-6 mb-3">
+        <div class="stat-card bg-outstanding">
+            <div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stat-number">{{ $totalOutstanding }}</div>
+            <div class="stat-label">Outstanding</div>
+            <div class="stat-footer">
+                <a href="{{ route('backlog-daily.index') }}">
+                    <i class="fas fa-arrow-circle-right mr-1"></i> More info
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- BARIS 2: Achievement + Doughnut --}}
+<div class="row mb-3">
+    <div class="col-lg-8 mb-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 font-weight-bold">
+                        <i class="fas fa-trophy text-warning mr-2"></i> Backlog Achievement
+                    </h6>
+                    <span class="badge badge-{{ $achievementPercentage >= 95 ? 'success' : ($achievementPercentage >= 90 ? 'warning' : 'danger') }}"
+                        style="font-size: 15px; padding: 6px 16px; border-radius: 20px;">
+                        {{ number_format($achievementPercentage, 2) }}%
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-4" style="height: 26px; border-radius: 8px; background: #f0f0f0;">
+                    <div class="progress-bar
+                        @if($achievementPercentage >= 95) bg-success
+                        @elseif($achievementPercentage >= 90) bg-warning
+                        @else bg-danger @endif"
+                        role="progressbar"
+                        style="width: {{ $achievementPercentage }}%; border-radius: 8px; font-size: 13px; font-weight: 600;">
+                        {{ number_format($achievementPercentage, 2) }}%
+                    </div>
+                </div>
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="achievement-stat">
+                            <div class="num" style="color: #1A202C;">{{ $totalBacklog }}</div>
+                            <div class="lbl">Total Backlog</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="achievement-stat">
+                            <div class="num" style="color: #2e7d32;">{{ $totalComplete }}</div>
+                            <div class="lbl">Complete</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="achievement-stat">
+                            <div class="num" style="color: #E53E3E;">{{ $totalOutstanding }}</div>
+                            <div class="lbl">Outstanding</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="achievement-stat">
+                            <div class="num" style="color: #546e7a;">{{ $totalOverdue }}</div>
+                            <div class="lbl">Overdue</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    @if($achievementPercentage >= 95)
+                        <div class="alert alert-success mb-0 py-2" style="border-radius: 8px; font-size: 13px;">
+                            <i class="fas fa-trophy mr-1"></i> <strong>Excellent!</strong> Target achievement 95% tercapai!
+                        </div>
+                    @elseif($achievementPercentage >= 90)
+                        <div class="alert alert-warning mb-0 py-2" style="border-radius: 8px; font-size: 13px;">
+                            <i class="fas fa-info-circle mr-1"></i> <strong>Good!</strong> Hampir mencapai target 95%.
+                        </div>
+                    @else
+                        <div class="alert alert-danger mb-0 py-2" style="border-radius: 8px; font-size: 13px;">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> <strong>Attention!</strong> Achievement masih di bawah target 90%. Perlu ditingkatkan!
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="mb-0 font-weight-bold">
+                    <i class="fas fa-chart-pie mr-2 text-primary"></i> Status Backlog
+                </h6>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content: center">
+                <div style="height: 200px; width: 100%;">
+                    <canvas id="backlogStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- BARIS 3: Tabel Monitoring --}}
+<p class="section-title"><i class="fas fa-table mr-2"></i>Monitoring Backlog</p>
+<div class="card mb-3">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 font-weight-bold">Data Backlog
+                @if(request('unit'))
+                    <span class="badge badge-info ml-2" style="border-radius: 20px;">{{ request('unit') }}</span>
+                @endif
+                @if(request('status'))
+                    <span class="badge badge-secondary ml-1" style="border-radius: 20px;">{{ request('status') == 'overdue' ? 'Overdue' : 'Outstanding' }}</span>
+                @endif
+            </h6>
+            <div>
+                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalImport" style="border-radius: 8px; font-size: 12px;">
+                    <i class="fas fa-file-excel mr-1"></i> Import Excel
+                </button>
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-success btn-sm dropdown-toggle" type="button" data-toggle="dropdown" style="border-radius: 8px; font-size: 12px;">
+                        <i class="fas fa-download mr-1"></i> Export Excel
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{{ route('dashboard.export-excel') }}?type=all"><i class="fas fa-table mr-1"></i> Export Semua Data</a>
+                        <a class="dropdown-item" href="{{ route('dashboard.export-excel') }}?type=outstanding"><i class="fas fa-exclamation-circle mr-1"></i> Export Outstanding</a>
+                        <a class="dropdown-item" href="{{ route('dashboard.export-excel') }}?type=overdue"><i class="fas fa-clock mr-1"></i> Export Overdue</a>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#modalHapus" style="border-radius: 8px; font-size: 12px;">
+                    <i class="fas fa-trash mr-1"></i> Hapus Data
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <form method="GET" action="{{ route('dashboard') }}" class="mb-3" id="filter-form">
+            <div class="d-flex align-items-center" style="gap:8px;">
+                <div class="dropdown">
+                    <button class="btn btn-dark" type="button" onclick="toggleFilter()" style="border-radius:8px;font-size:13px;background:#1A202C;border-color:#1A202C;">
+                        <i class="fas fa-filter mr-1"></i> Filter
+                        @if(request('unit') || request('status') || request('reservation'))
+                            <span class="badge badge-warning ml-1" style="font-size:10px;">Aktif</span>
+                        @endif
+                    </button>
+                    <div class="dropdown-menu p-3" id="filter-dropdown" style="min-width:280px;border-radius:8px;display:none;position:fixed;z-index:99999;background:#fff;border:1px solid #e0e0e0;padding:16px;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-height:80vh;overflow-y:auto;">
+                        <p class="mb-2" style="font-weight:600;font-size:13px;">Filter Data</p>
+                        <div class="mb-2">
+                            <label style="font-size:12px;color:#666;">Unit</label>
+                            <select name="unit" class="form-control form-control-sm">
+                                <option value="">-- Semua Unit --</option>
+                                @foreach($unitList as $u)
+                                    <option value="{{ $u }}" {{ request('unit') == $u ? 'selected' : '' }}>{{ $u }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label style="font-size:12px;color:#666;">Status</label>
+                            <select name="status" class="form-control form-control-sm">
+                                <option value="">-- Semua Status --</option>
+                                <option value="outstanding" {{ request('status') == 'outstanding' ? 'selected' : '' }}>Outstanding</option>
+                                <option value="overdue" {{ request('status') == 'overdue' ? 'selected' : '' }}>Overdue</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label style="font-size:12px;color:#666;">Reservation</label>
+                            <input type="text" name="reservation" class="form-control form-control-sm" placeholder="No. reservation..." value="{{ request('reservation') }}">
+                        </div>
+                        <div class="d-flex" style="gap:6px;">
+                            <button type="submit" class="btn btn-dark btn-sm flex-fill" style="border-radius:6px;background:#1A202C;">Terapkan</button>
+                            <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary btn-sm flex-fill" style="border-radius:6px;">Reset</a>
+                        </div>
+                    </div>
+                </div>
+                <div style="max-width:300px;flex:1;">
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="search" class="form-control" placeholder="Cari deskripsi, part number..." autocomplete="off" value="{{ request('search') }}" style="border-radius:8px 0 0 8px;font-size:13px;">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-dark" style="border-radius:0 8px 8px 0;background:#1A202C;"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+<script>function toggleFilter(){var d=document.getElementById("filter-dropdown");var btn=event.currentTarget;var rect=btn.getBoundingClientRect();if(d.style.display==="none"){d.style.top=(rect.bottom+4)+"px";d.style.left=rect.left+"px";d.style.display="block";}else{d.style.display="none";}}</script>
+        <div class="mb-2" id="bulk-actions" style="display:none;">
+            <button type="button" class="btn btn-success btn-sm" id="btn-complete" style="border-radius: 8px;">
+                <i class="fas fa-check mr-1"></i> Tandai Complete
+            </button>
+
+            <span class="ml-2 text-muted" id="selected-count" style="font-size: 12px;">0 data dipilih</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-monitoring table-hover" style="font-size:11px;" id="tabel-monitoring">
+                <thead>
+                    <tr>
+                        <th style="width:30px;"><input type="checkbox" id="select-all"></th>
+                        <th>No</th>
+                        <th>Reservation</th>
+                        <th>PN</th>
+                        <th>NPN</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Backlog Desc</th>
+                        <th>Plan Date</th>
+                        <th>Jarak Eksekusi</th>
+                        <th>Tgl BCS</th>
+                        <th>Remarks</th>
+                        <th>ETA</th>
+                        <th>Posisi Part</th>
+                        <th>Ref. Dokumen</th>
+                        <th>Material</th>
+                        <th>Qty ZBOH</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($backlogMonitoring as $index => $item)
+                    <tr data-unit="{{ $item->unit }}" data-status="{{ $item->status }}">
+                        <td><input type="checkbox" class="row-checkbox" value="{{ $item->id }}"></td>
+                        <td>{{ $backlogMonitoring->firstItem() + $index }}</td>
+                        <td>
+                            <span style="font-weight: 600; font-size: 12px;">{{ $item->reservation_number ?? '-' }}</span><br>
+                            <small class="text-muted">Item: {{ $item->reservation_item ?? '-' }}</small>
+                        </td>
+                        <td>{{ $item->part_number ?? '-' }}</td>
+                        <td>{{ $item->npn ?? '-' }}</td>
+                        <td>{{ $item->qty ?? '-' }}</td>
+                        <td>
+                            <span class="badge badge-info" style="border-radius: 20px; font-size: 11px; padding: 4px 8px;">
+                                {{ $item->unit ?? '-' }}
+                            </span>
+                        </td>
+                        <td>{{ $item->mo_description ?? '-' }}</td>
+                        <td>{{ $item->plan_date ? \Carbon\Carbon::parse($item->plan_date)->format('d/m/Y') : '-' }}</td>
+                        <td>
+                            @if($item->jarak_eksekusi !== null)
+                                @if($item->jarak_eksekusi > 0)
+                                    <span class="badge-jarak badge-terlambat">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ $item->jarak_eksekusi }} hari
+                                    </span>
+                                @elseif($item->jarak_eksekusi == 0)
+                                    <span class="badge-jarak badge-hariini">
+                                        <i class="fas fa-clock mr-1"></i>Hari ini
+                                    </span>
+                                @else
+                                    <span class="badge-jarak badge-belum">
+                                        <i class="fas fa-check-circle mr-1"></i>{{ abs($item->jarak_eksekusi) }} hari
+                                    </span>
+                                @endif
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td>{{ $item->tanggal_bcs ? \Carbon\Carbon::parse($item->tanggal_bcs)->format('d/m/Y') : '-' }}</td>
+                        <td>
+                            <input type="text"
+                                class="form-control remarks-input" style="width:100px; font-size:11px;"
+                                data-id="{{ $item->id }}"
+                                value="{{ $item->remarks ?? '' }}"
+                                placeholder="Remarks..."
+                                readonly>
+                        </td>
+                        <td>
+                            @if($item->eta)
+                                <input type="date" class="form-control form-control-sm eta-input" data-id="{{ $item->id }}" value="{{ \Carbon\Carbon::parse($item->eta)->format('Y-m-d') }}" style="width:120px; border-radius:6px; font-size:11px;">
+                            @else
+                                <input type="date" class="form-control form-control-sm eta-input" data-id="{{ $item->id }}" style="width:120px; border-radius:6px; font-size:11px;">
+                            @endif
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm posisi-input" data-id="{{ $item->id }}" value="{{ $item->posisi ?? '' }}" placeholder="Posisi part..." style="width:130px; border-radius:6px; font-size:11px;">
+                        </td>
+                        <td>{{ $item->referensi_dokumen ?? '-' }}</td>
+                        <td>{{ $item->material ?? '-' }}</td>
+                        <td>{{ $item->qty_zboh ?? '-' }}</td>
+                        <td>
+                            @if($item->status == 'complete')
+                                <span class="badge badge-success" style="border-radius: 20px; padding: 5px 10px;">Complete</span>
+                            @elseif($item->status == 'outstanding')
+                                <span class="badge badge-warning" style="border-radius: 20px; padding: 5px 10px;">Outstanding</span>
+                            @elseif($item->status == 'overdue')
+                                <span class="badge badge-danger" style="border-radius: 20px; padding: 5px 10px;">Overdue</span>
+                            @else
+                                <span class="badge badge-secondary" style="border-radius: 20px; padding: 5px 10px;">On Progress</span>
+                            @endif
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-success btn-xs btn-action"
+                                data-id="{{ $item->id }}" data-status="complete" title="Complete"
+                                style="border-radius: 6px; padding: 3px 7px;">
+                                <i class="fas fa-check"></i>
+                            </button>
+
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="14" class="text-center text-muted py-5">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block" style="opacity: 0.3;"></i>
+                            Belum ada data backlog
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3">{{ $backlogMonitoring->links() }}</div>
+    </div>
+</div>
+
+{{-- BARIS 4: Monthly Trend --}}
+<p class="section-title"><i class="fas fa-chart-line mr-2"></i>Tren Bulanan</p>
+<div class="card mb-3">
+    <div class="card-header">
+        <h6 class="mb-0 font-weight-bold">
+            <i class="fas fa-chart-line mr-2 text-primary"></i> Monthly Trend
+        </h6>
+    </div>
+    <div class="card-body">
+        <div style="height: 240px;">
+            <canvas id="monthlyTrendChart"></canvas>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Import --}}
+<div class="modal fade" id="modalImport" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 14px;">
+            <div class="modal-header bg-primary text-white" style="border-radius: 14px 14px 0 0;">
+                <h5 class="modal-title"><i class="fas fa-file-excel mr-2"></i> Import Excel BCS</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <form action="{{ route('backlog-daily.import-excel') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label style="font-size: 13px; font-weight: 600;">Tanggal BCS</label>
+                        <input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required style="border-radius: 8px;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 13px; font-weight: 600;">File Excel BCS (.xlsx / .xls)</label>
+                        <input type="file" name="file" class="form-control-file" accept=".xlsx,.xls" required>
+                        <small class="text-muted">Format: file BCS dari SM. Maks 5MB.</small>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 13px; font-weight: 600;">File ZBOH (.xlsx / .xls) <span class="text-muted" style="font-weight:400;">(opsional)</span></label>
+                        <input type="file" name="file_zboh" class="form-control-file" accept=".xlsx,.xls">
+                        <small class="text-muted">Upload file ZBOH untuk auto-fill Remarks & Qty ZBOH.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 8px;">Batal</button>
+                    <button type="submit" class="btn btn-primary" style="border-radius: 8px;">
+                        <i class="fas fa-upload mr-1"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Hapus --}}
+<div class="modal fade" id="modalHapus" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 14px;">
+            <div class="modal-header bg-danger text-white" style="border-radius: 14px 14px 0 0;">
+                <h5 class="modal-title"><i class="fas fa-trash mr-2"></i> Hapus Data Import</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" style="border-radius: 8px; font-size: 13px;">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    Hanya data dari tanggal yang dipilih yang akan dihapus. Data <strong>Complete</strong> tidak akan terhapus.
+                </div>
+                <label style="font-size: 13px; font-weight: 600;">
+                    <i class="fas fa-calendar mr-1"></i> Pilih Tanggal Import yang ingin dihapus:
+                </label>
+                <div id="tanggal-list" class="mt-2">
+                    @forelse($tanggalList as $tgl)
+                    <div class="tanggal-item" data-tanggal="{{ $tgl }}">
+                        <div>
+                            <div class="tgl-date">
+                                <i class="fas fa-calendar-day mr-2 text-danger"></i>
+                                {{ \Carbon\Carbon::parse($tgl)->format('d/m/Y') }}
+                            </div>
+                            <div class="tgl-ago">{{ \Carbon\Carbon::parse($tgl)->diffForHumans() }}</div>
+                        </div>
+                        <i class="fas fa-check-circle tgl-check fa-lg"></i>
+                    </div>
+                    @empty
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-inbox mr-1"></i> Tidak ada data import
+                    </div>
+                    @endforelse
+                </div>
+                <input type="hidden" id="hapus-tanggal-selected" value="">
+                <div id="hapus-info" class="mt-2" style="display:none;">
+                    <div class="alert alert-danger mb-0 py-2" style="border-radius: 8px; font-size: 13px;">
+                        <i class="fas fa-trash mr-1"></i>
+                        Data tanggal <strong id="hapus-tgl-label"></strong> akan dihapus.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 8px;">Batal</button>
+                <button type="button" class="btn btn-danger" id="btn-hapus-data" style="border-radius: 8px;" disabled>
+                    <i class="fas fa-trash mr-1"></i> Hapus Data Terpilih
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    // ETA input handler
+    $(document).on('change', '.eta-input', function() {
+        var id = $(this).data('id');
+        var eta = $(this).val();
+        $.ajax({
+            url: '/backlog-daily/' + id + '/update-eta',
+            method: 'POST',
+            data: { _token: '{{ csrf_token() }}', eta: eta },
+            success: function(response) {
+                if (response.success) { console.log('ETA updated'); }
+            },
+            error: function() { alert('Gagal update ETA!'); }
+        });
+    });
+
+    // Posisi input handler
+    $(document).on('change', '.posisi-input', function() {
+        var id = $(this).data('id');
+        var posisi = $(this).val();
+        $.ajax({
+            url: '/backlog-daily/' + id + '/update-posisi',
+            method: 'POST',
+            data: { _token: '{{ csrf_token() }}', posisi: posisi },
+            success: function(response) {
+                if (response.success) { console.log('Posisi updated'); }
+            },
+            error: function() { alert('Gagal update Posisi!'); }
+        });
+    });
+
+
+    // SELECT ALL
+    $('#select-all').on('change', function() {
+        $('.row-checkbox').prop('checked', $(this).is(':checked'));
+        updateBulkActions();
+    });
+    $(document).on('change', '.row-checkbox', function() { updateBulkActions(); });
+    function updateBulkActions() {
+        var count = $('.row-checkbox:checked').length;
+        if (count > 0) { $('#bulk-actions').show(); $('#selected-count').text(count + ' data dipilih'); }
+        else { $('#bulk-actions').hide(); }
+    }
+
+    // ACTION BUTTONS
+    $(document).on('click', '.btn-action', function() {
+        var id = $(this).data('id'), status = $(this).data('status');
+        if (confirm('Tandai data ini sebagai ' + (status == 'complete' ? 'Complete' : 'Outstanding') + '?')) {
+            updateStatus([id], status);
+        }
+    });
+    $('#btn-complete').on('click', function() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) return;
+        if (confirm('Tandai ' + ids.length + ' data sebagai Complete?')) updateStatus(ids, 'complete');
+    });
+
+    function getSelectedIds() {
+        var ids = [];
+        $('.row-checkbox:checked').each(function() { ids.push($(this).val()); });
+        return ids;
+    }
+    function updateStatus(ids, status) {
+        $.ajax({
+            url: '{{ route("dashboard.update-status") }}',
+            method: 'POST',
+            data: { _token: '{{ csrf_token() }}', ids: ids, status: status },
+            success: function(r) { if (r.success) { alert('Status berhasil diupdate!'); location.reload(); } },
+            error: function() { alert('Gagal update status!'); }
+        });
+    }
+
+    // REMARKS
+    $(document).on('mousedown', '.remarks-input[readonly]', function(e) {
+        e.preventDefault();
+        var $input = $(this);
+        if (confirm('Apakah Anda yakin ingin mengubah remarks ini?')) {
+            $input.prop('readonly', false).addClass('editable');
+            setTimeout(function() {
+                $input.focus();
+                var len = $input.val().length;
+                $input[0].setSelectionRange(len, len);
+            }, 10);
+        }
+    });
+    $(document).on('blur', '.remarks-input', function() {
+        var $input = $(this);
+        if (!$input.prop('readonly')) {
+            $input.prop('readonly', true).removeClass('editable');
+            $.ajax({
+                url: '{{ route("dashboard.update-remarks") }}',
+                method: 'POST',
+                data: { _token: '{{ csrf_token() }}', id: $input.data('id'), remarks: $input.val() },
+                error: function() { alert('Gagal menyimpan remarks!'); }
+            });
+        }
+    });
+
+    // PILIH TANGGAL DI MODAL HAPUS
+    $(document).on('click', '.tanggal-item', function() {
+        $('.tanggal-item').removeClass('selected');
+        $(this).addClass('selected');
+        var tgl = $(this).data('tanggal');
+        var tglLabel = $(this).find('.tgl-date').text().trim();
+        $('#hapus-tanggal-selected').val(tgl);
+        $('#hapus-tgl-label').text(tglLabel);
+        $('#hapus-info').show();
+        $('#btn-hapus-data').prop('disabled', false);
+    });
+
+    $('#modalHapus').on('hidden.bs.modal', function() {
+        $('.tanggal-item').removeClass('selected');
+        $('#hapus-tanggal-selected').val('');
+        $('#hapus-info').hide();
+        $('#btn-hapus-data').prop('disabled', true);
+    });
+
+    // HAPUS DATA
+    $('#btn-hapus-data').on('click', function() {
+        var tanggal = $('#hapus-tanggal-selected').val();
+        var label   = $('#hapus-tgl-label').text().trim();
+        if (!tanggal) { alert('Pilih tanggal import yang ingin dihapus terlebih dahulu.'); return; }
+        if (confirm('Yakin hapus data import tanggal ' + label + '?\n\nData yang sudah Complete tidak akan terhapus.')) {
+            $.ajax({
+                url: '{{ route("dashboard.hapus-data") }}',
+                method: 'POST',
+                data: { _method: 'DELETE', _token: '{{ csrf_token() }}', tanggal: tanggal },
+                success: function(r) {
+                    if (r.success) { alert(r.message); $('#modalHapus').modal('hide'); location.reload(); }
+                },
+                error: function() { alert('Gagal menghapus data!'); }
+            });
+        }
+    });
+
+    // CHART Doughnut
+    const statusCtx = document.getElementById('backlogStatusChart');
+    if (statusCtx) {
+        const statusData = @json($backlogByStatus);
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: statusData.map(i => i.status ? i.status.toUpperCase() : 'UNKNOWN'),
+                datasets: [{ data: statusData.map(i => i.total), backgroundColor: ['#28a745','#FFD700','#6c757d','#dc3545'], borderWidth: 3, borderColor: '#fff' }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } } },
+                cutout: '65%'
+            }
+        });
+    }
+
+    // CHART Line
+    const trendCtx = document.getElementById('monthlyTrendChart');
+    if (trendCtx) {
+        const trendData = @json($monthlyTrend);
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: trendData.map(i => months[i.month - 1] + ' ' + i.year),
+                datasets: [
+                    { label: 'Total Backlog', data: trendData.map(i => i.total), borderColor: '#1A202C', backgroundColor: 'rgba(26,32,44,0.07)', tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#1A202C' },
+                    { label: 'Complete', data: trendData.map(i => i.completed), borderColor: '#FFD700', backgroundColor: 'rgba(255,215,0,0.1)', tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#FFD700' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+                scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }
+            }
+        });
+    }
+});
+
+
+</script>
+@endpush

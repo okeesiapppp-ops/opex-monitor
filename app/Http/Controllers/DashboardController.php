@@ -50,9 +50,9 @@ class DashboardController extends Controller
         DB::table('tb_backlog_daily')
             ->whereNotNull('plan_date')
             ->whereDate('plan_date', '<', $today)
-            ->where('status', 'pending')
+            ->where('status', 'outstanding')
             ->update([
-                'status'     => 'outstanding',
+                'status'     => 'overdue',
                 'updated_at' => now(),
             ]);
     }
@@ -76,24 +76,26 @@ class DashboardController extends Controller
         $totalBacklog     = TbBacklogDaily::count();
         $totalComplete    = TbBacklogDaily::where('status', 'complete')->count();
         $totalOutstanding = TbBacklogDaily::where('status', 'outstanding')->count();
-        $totalPending     = TbBacklogDaily::where('status', 'pending')->count();
+        $totalOverdue     = TbBacklogDaily::where('status', 'overdue')->count();
 
         $achievementPercentage = $totalBacklog > 0
             ? round(($totalComplete / $totalBacklog) * 100, 2)
             : 0;
 
         $backlogMonitoring = TbBacklogDaily::with(['vendor', 'planner'])
-            ->whereNotIn('status', ['complete'])
+            ->whereNotIn('status', ['complete', 'cancel'])
             ->when($request->filled('unit'), fn($q) => $q->where('unit', $request->unit))
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+            ->when($request->filled('reservation'), fn($q) => $q->where('reservation_number', 'like', '%'.$request->reservation.'%'))
+            ->when($request->filled('search'), fn($q) => $q->where(fn($q2) => $q2->where('mo_description', 'like', '%'.$request->search.'%')->orWhere('part_number', 'like', '%'.$request->search.'%')->orWhere('reservation_number', 'like', '%'.$request->search.'%')->orWhere('unit', 'like', '%'.$request->search.'%')->orWhere('npn', 'like', '%'.$request->search.'%')))
             ->latest()
             ->paginate(20)
-            ->appends($request->only(['unit', 'status']));
+            ->appends($request->only(['unit', 'status', 'reservation', 'search']));
 
         $this->hitungJarakEksekusi($backlogMonitoring);
 
         $unitList = TbBacklogDaily::whereNotNull('unit')
-            ->whereNotIn('status', ['complete'])
+            ->whereNotIn('status', ['complete', 'cancel'])
             ->distinct()
             ->pluck('unit')
             ->sort()
@@ -109,12 +111,12 @@ class DashboardController extends Controller
             ->map(fn($t) => Carbon::parse($t)->format('Y-m-d'));
 
         $totalOverdue = TbBacklogDaily::whereNotNull('plan_date')
-            ->whereNotIn('status', ['complete'])
+            ->whereNotIn('status', ['complete', 'cancel'])
             ->whereDate('plan_date', '<', now()->toDateString())
             ->count();
 
         $overdueItems = TbBacklogDaily::whereNotNull('plan_date')
-            ->whereNotIn('status', ['complete'])
+            ->whereNotIn('status', ['complete', 'cancel'])
             ->whereDate('plan_date', '<', now()->toDateString())
             ->orderBy('plan_date', 'asc')
             ->limit(5)
@@ -129,11 +131,11 @@ class DashboardController extends Controller
         $backlogToday      = collect();
         $backlogByPriority = collect();
         $monthlyTrend      = collect();
-        $totalStillProgress = $totalPending + $totalOutstanding;
+        $totalStillProgress = $totalOverdue + $totalOutstanding;
         $totalInProgress    = $totalStillProgress;
 
         return view('dashboard', compact(
-            'totalBacklog', 'totalComplete', 'totalPending',
+            'totalBacklog', 'totalComplete', 'totalOverdue',
             'totalOutstanding', 'totalStillProgress',
             'totalInProgress', 'totalOverdue', 'overdueItems',
             'achievementPercentage', 'backlogMonitoring',
@@ -149,7 +151,7 @@ class DashboardController extends Controller
         $totalBacklog      = TbBacklogDaily::count();
         $totalComplete     = TbBacklogDaily::where('status', 'complete')->count();
         $totalOutstanding  = TbBacklogDaily::where('status', 'outstanding')->count();
-        $totalPending      = TbBacklogDaily::where('status', 'pending')->count();
+        $totalOverdue      = TbBacklogDaily::where('status', 'overdue')->count();
         $achievementPercentage = $totalBacklog > 0
             ? round(($totalComplete / $totalBacklog) * 100, 2)
             : 0;
@@ -157,17 +159,27 @@ class DashboardController extends Controller
         $totalOverdue  = 0;
         $overdueItems  = collect();
 
-        $queryVendor = TbBacklogDaily::latest();
+        $queryVendor = TbBacklogDaily::whereNotIn('status', ['cancel'])->latest();
         if ($request->filled('unit')) {
             $queryVendor->where('unit', $request->unit);
         }
-        $statusInput = isset($_GET['status']) ? $_GET['status'] : 'NOT_SET';
-        if ($statusInput === 'NOT_SET') {
-            $queryVendor->where('status', 'outstanding');
-        } elseif ($statusInput !== '') {
+        $statusInput = isset($_GET['status']) ? $_GET['status'] : '';
+        if ($statusInput !== '') {
             $queryVendor->where('status', $statusInput);
         }
-        $backlogMonitoring = $queryVendor->paginate(20)->appends($request->only(['unit', 'status']));
+        if ($request->filled('reservation')) {
+            $queryVendor->where('reservation_number', 'like', '%'.$request->reservation.'%');
+        }
+        if ($request->filled('search')) {
+            $queryVendor->where(function($q) use ($request) {
+                $q->where('mo_description', 'like', '%'.$request->search.'%')
+                  ->orWhere('part_number', 'like', '%'.$request->search.'%')
+                  ->orWhere('reservation_number', 'like', '%'.$request->search.'%')
+                  ->orWhere('unit', 'like', '%'.$request->search.'%')
+                  ->orWhere('npn', 'like', '%'.$request->search.'%');
+            });
+        }
+        $backlogMonitoring = $queryVendor->paginate(20)->appends($request->only(['unit', 'status', 'reservation', 'search']));
 
         $this->hitungJarakEksekusi($backlogMonitoring);
 
@@ -179,7 +191,7 @@ class DashboardController extends Controller
 
         return view('dashboard-vendor', compact(
             'totalBacklog', 'totalComplete', 'totalOutstanding',
-            'totalPending', 'achievementPercentage', 'totalOverdue',
+            'totalOverdue', 'achievementPercentage', 'totalOverdue',
             'overdueItems', 'totalArchive', 'backlogMonitoring', 'unitList'
         ));
     }
@@ -189,7 +201,7 @@ class DashboardController extends Controller
         $totalBacklog      = TbBacklogDaily::count();
         $totalComplete     = TbBacklogDaily::where('status', 'complete')->count();
         $totalOutstanding  = TbBacklogDaily::where('status', 'outstanding')->count();
-        $totalPending      = TbBacklogDaily::where('status', 'pending')->count();
+        $totalOverdue      = TbBacklogDaily::where('status', 'overdue')->count();
         $totalOverdue      = 0;
         $overdueItems      = collect();
 
@@ -197,17 +209,27 @@ class DashboardController extends Controller
             ? round(($totalComplete / $totalBacklog) * 100, 2)
             : 0;
 
-        $queryPlanner = TbBacklogDaily::latest();
+        $queryPlanner = TbBacklogDaily::whereNotIn('status', ['cancel'])->latest();
         if ($request->filled('unit')) {
             $queryPlanner->where('unit', $request->unit);
         }
-        $statusInput = isset($_GET['status']) ? $_GET['status'] : 'NOT_SET';
-        if ($statusInput === 'NOT_SET') {
-            $queryPlanner->where('status', 'outstanding');
-        } elseif ($statusInput !== '') {
+        $statusInput = isset($_GET['status']) ? $_GET['status'] : '';
+        if ($statusInput !== '') {
             $queryPlanner->where('status', $statusInput);
         }
-        $backlogMonitoring = $queryPlanner->paginate(20)->appends($request->only(['unit', 'status']));
+        if ($request->filled('reservation')) {
+            $queryPlanner->where('reservation_number', 'like', '%'.$request->reservation.'%');
+        }
+        if ($request->filled('search')) {
+            $queryPlanner->where(function($q) use ($request) {
+                $q->where('mo_description', 'like', '%'.$request->search.'%')
+                  ->orWhere('part_number', 'like', '%'.$request->search.'%')
+                  ->orWhere('reservation_number', 'like', '%'.$request->search.'%')
+                  ->orWhere('unit', 'like', '%'.$request->search.'%')
+                  ->orWhere('npn', 'like', '%'.$request->search.'%');
+            });
+        }
+        $backlogMonitoring = $queryPlanner->paginate(20)->appends($request->only(['unit', 'status', 'reservation', 'search']));
 
         $this->hitungJarakEksekusi($backlogMonitoring);
 
@@ -221,7 +243,7 @@ class DashboardController extends Controller
 
         return view('dashboard-planner', compact(
             'totalBacklog', 'totalComplete', 'totalOutstanding',
-            'totalPending', 'achievementPercentage', 'totalOverdue',
+            'totalOverdue', 'achievementPercentage', 'totalOverdue',
             'overdueItems', 'backlogMonitoring', 'unitList', 'totalArchive'
         ));
     }
@@ -230,7 +252,7 @@ class DashboardController extends Controller
     {
         $request->validate([
             'ids'    => 'required|array',
-            'status' => 'required|in:complete,outstanding,pending'
+            'status' => 'required|in:complete,outstanding,overdue'
         ]);
 
         TbBacklogDaily::whereIn('id', $request->ids)
@@ -255,7 +277,7 @@ class DashboardController extends Controller
         foreach ($archives as $archive) {
             $archive->total_complete    = TbDetailArchive::where('archive_id', $archive->id)->count();
             $archive->total_backlog     = TbBacklogDaily::count();
-            $archive->total_pending     = TbBacklogDaily::where('status', 'pending')->count();
+            $archive->total_overdue     = TbBacklogDaily::where('status', 'overdue')->count();
             $archive->total_outstanding = TbBacklogDaily::where('status', 'outstanding')->count();
             $archive->save();
         }
@@ -275,7 +297,7 @@ class DashboardController extends Controller
             [
                 'total_backlog'     => 0,
                 'total_complete'    => 0,
-                'total_pending'     => 0,
+                'total_overdue'     => 0,
                 'total_outstanding' => 0,
                 'notes'             => 'Auto-generated',
                 'created_by'        => Auth::id(),
@@ -313,7 +335,7 @@ class DashboardController extends Controller
 
         $archive->total_complete    = TbDetailArchive::where('archive_id', $archive->id)->count();
         $archive->total_backlog     = TbBacklogDaily::count();
-        $archive->total_pending     = TbBacklogDaily::where('status', 'pending')->count();
+        $archive->total_overdue     = TbBacklogDaily::where('status', 'overdue')->count();
         $archive->total_outstanding = TbBacklogDaily::where('status', 'outstanding')->count();
         $archive->save();
     }
@@ -342,7 +364,7 @@ class DashboardController extends Controller
 
         if ($request->filled('tanggal')) {
             $deleted = TbBacklogDaily::whereDate('tanggal', $request->tanggal)
-                ->whereNotIn('status', ['complete'])
+                ->whereNotIn('status', ['complete', 'cancel'])
                 ->delete();
             $message = 'Data tanggal ' . $request->tanggal . ' berhasil dihapus! (' . $deleted . ' data)';
         } else {
@@ -379,5 +401,51 @@ class DashboardController extends Controller
                 return response()->json(['error' => 'Invalid type'], 400);
         }
         return response()->json($data);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $type = $request->input('type', 'all');
+        $query = TbBacklogDaily::whereNotIn('status', ['complete', 'cancel']);
+        if ($type === 'outstanding') {
+            $query->where('status', 'outstanding');
+            $filename = 'backlog-outstanding-' . date('Y-m-d') . '.xlsx';
+        } elseif ($type === 'onprogress') {
+            $query->where('status', 'overdue');
+            $filename = 'backlog-onprogress-' . date('Y-m-d') . '.xlsx';
+        } else {
+            $filename = 'backlog-semua-' . date('Y-m-d') . '.xlsx';
+        }
+        $data = $query->get();
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('BCS');
+        $headers = ['No','Reservation','Rsv Item','PN','NPN','Mnemonic Requested','qty','Unit','Backlog Desc','plan date','Jarak Ekeskusi','TANGGAL BCS','REMARKS','ETA','Posisi Part','Prepare by','Status'];
+        foreach ($headers as $i => $h) { $sheet->setCellValueByColumnAndRow($i+1, 1, $h); }
+        foreach ($data as $row => $item) {
+            $sheet->setCellValueByColumnAndRow(1, $row+2, $row+1);
+            $sheet->setCellValueByColumnAndRow(2, $row+2, $item->reservation_number);
+            $sheet->setCellValueByColumnAndRow(3, $row+2, $item->reservation_item);
+            $sheet->setCellValueByColumnAndRow(4, $row+2, $item->part_number);
+            $sheet->setCellValueByColumnAndRow(5, $row+2, $item->npn);
+            $sheet->setCellValueByColumnAndRow(6, $row+2, $item->manufacture);
+            $sheet->setCellValueByColumnAndRow(7, $row+2, $item->qty);
+            $sheet->setCellValueByColumnAndRow(8, $row+2, $item->unit);
+            $sheet->setCellValueByColumnAndRow(9, $row+2, $item->mo_description);
+            $sheet->setCellValueByColumnAndRow(10, $row+2, $item->plan_date ? $item->plan_date->format('d/m/Y') : '-');
+            $sheet->setCellValueByColumnAndRow(11, $row+2, $item->jarak_eksekusi);
+            $sheet->setCellValueByColumnAndRow(12, $row+2, $item->tanggal_bcs ? $item->tanggal_bcs->format('d/m/Y') : '-');
+            $sheet->setCellValueByColumnAndRow(13, $row+2, $item->remarks);
+            $sheet->setCellValueByColumnAndRow(14, $row+2, $item->eta ? $item->eta->format('d/m/Y') : '-');
+            $sheet->setCellValueByColumnAndRow(15, $row+2, $item->posisi);
+            $sheet->setCellValueByColumnAndRow(16, $row+2, 'UT');
+            $sheet->setCellValueByColumnAndRow(17, $row+2, $item->status);
+        }
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="'.$filename.'"');
+        header('Cache-Control: max-age=0');
+        $writer->save('php://output');
+        exit;
     }
 }

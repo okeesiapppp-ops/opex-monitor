@@ -4,9 +4,13 @@ namespace App\Imports;
 
 use App\Models\TbBacklogDaily;
 use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Illuminate\Support\Collection;
 use Carbon\Carbon;
+
+use Maatwebsite\Excel\Concerns\WithMultipleSheets as WMS;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class BacklogDailyImport implements WithMultipleSheets
 {
@@ -19,13 +23,16 @@ class BacklogDailyImport implements WithMultipleSheets
 
     public function sheets(): array
     {
-        return [
-            'BCS' => new BCSSheetImport($this->tanggal),
-        ];
+        $sheets = [];
+        $spreadsheet = IOFactory::load(request()->file('file')->getPathname());
+        foreach ($spreadsheet->getSheetNames() as $name) {
+            $sheets[$name] = new BCSSheetImport($this->tanggal);
+        }
+        return $sheets;
     }
 }
 
-class BCSSheetImport implements ToCollection
+class BCSSheetImport implements ToCollection, WithCalculatedFormulas
 {
     private $tanggal;
 
@@ -36,20 +43,18 @@ class BCSSheetImport implements ToCollection
 
     private function get(array $data, array $keys, $default = null)
     {
-        $lookup = [];
+        $found = null;
         foreach ($data as $k => $v) {
-            $lookup[strtolower(trim((string)$k))] = $k;
-        }
-        foreach ($keys as $key) {
-            $normalized = strtolower(trim((string)$key));
-            if (isset($lookup[$normalized])) {
-                $val = $data[$lookup[$normalized]];
-                if ($val !== null && $val !== '') {
-                    return $val;
+            $normalized_k = strtolower(trim((string)$k));
+            foreach ($keys as $key) {
+                if ($normalized_k === strtolower(trim((string)$key))) {
+                    if ($v !== null && $v !== '') {
+                        $found = $v;
+                    }
                 }
             }
         }
-        return $default;
+        return $found !== null ? $found : $default;
     }
 
     public function collection(Collection $rows)
@@ -59,14 +64,19 @@ class BCSSheetImport implements ToCollection
         foreach ($rows as $index => $row) {
             if ($row->filter()->isEmpty()) continue;
 
-            if ($index === 1) {
-                $headers = $row->toArray();
+            if ($headers === null) {
+                $rowArr = $row->toArray();
+                $rowLower = array_map('strtolower', array_map('trim', array_map('strval', $rowArr)));
+                if (in_array('reservation', $rowLower)) {
+                    $headers = $rowArr;
+                }
                 continue;
             }
 
-            if ($headers === null || $index < 2) continue;
+
 
             $data = array_combine($headers, $row->toArray());
+            \Log::error('ROW rsv='.($data['Reservation'] ?? $data['reservation'] ?? 'null'));
 
             $reservationNumber = $this->get($data, ['Reservation', 'reservation', 'RESERVATION']);
             $reservationItem   = $this->get($data, ['Rsv Item', 'rsv item', 'RSV ITEM', 'Rsv_Item']);
@@ -82,16 +92,44 @@ class BCSSheetImport implements ToCollection
             $jarakEksekusi     = $this->get($data, ['Jarak Ekeskusi', 'Jarak Eksekusi', 'jarak eksekusi', 'JARAK EKSEKUSI']);
             $tanggalBcs        = $this->get($data, ['TANGGAL BCS', 'tanggal bcs', 'Tanggal BCS', 'tanggal_bcs']);
             $remarks           = $this->get($data, ['REMARKS 1', 'remarks 1', 'Remarks 1', 'REMARKS', 'remarks', 'Remarks']);
+            $etaRaw = $this->get($data, ['ETA', 'eta', 'Eta', 'ETA ONSITE', 'eta onsite', 'ETA ONSI', 'eta onsi']);
+            $eta = null;
+            if (!empty($etaRaw) && $etaRaw != 0) {
+                try {
+                    if (is_numeric($etaRaw) && $etaRaw > 1000) {
+                        $eta = \Carbon\Carbon::createFromTimestamp(($etaRaw - 25569) * 86400)->toDateString();
+                    } elseif (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $etaRaw, $m)) {
+                        $eta = \Carbon\Carbon::createFromDate($m[3], $m[2], $m[1])->toDateString();
+                    } else {
+                        $eta = \Carbon\Carbon::parse($etaRaw)->toDateString();
+                    }
+                } catch (\Exception $e) { $eta = null; }
+            }
+            $posisi            = $this->get($data, ['Posisi', 'posisi', 'POSISI', 'Stock Position', 'stock position', 'STOCK POSITION', 'Location', 'location']);
+            $prepareBy         = $this->get($data, ['Prepare by', 'prepare by', 'PREPARE BY', 'Prepared by', 'prepared by']);
 
-            if (empty($reservationNumber) && empty($equipment)) continue;
+            // Filter: hanya import data dengan Prepare by = UT
+            if (!empty($prepareBy) && strtoupper(trim($prepareBy)) !== 'UT') {
+                \Log::error('SKIP_PREPARE rsv='.$reservationNumber.' prepare='.json_encode($prepareBy));
+                continue;
+            }
+
+            if (empty($reservationNumber) && empty($equipment)) {
+                \Log::error('SKIP_EMPTY rsv='.$reservationNumber);
+                continue;
+            }
 
             // Parse plan_date
             $planDateParsed = null;
             if (!empty($planDate)) {
                 try {
-                    $planDateParsed = is_numeric($planDate)
-                        ? Carbon::createFromTimestamp(($planDate - 25569) * 86400)->toDateString()
-                        : Carbon::parse($planDate)->toDateString();
+                    if (is_numeric($planDate)) {
+                        $planDateParsed = Carbon::createFromTimestamp(($planDate - 25569) * 86400)->toDateString();
+                    } elseif (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $planDate, $m)) {
+                        $planDateParsed = Carbon::createFromDate($m[3], $m[2], $m[1])->toDateString();
+                    } else {
+                        $planDateParsed = Carbon::parse($planDate)->toDateString();
+                    }
                 } catch (\Exception $e) {
                     $planDateParsed = null;
                 }
@@ -101,9 +139,13 @@ class BCSSheetImport implements ToCollection
             $tanggalBcsParsed = null;
             if (!empty($tanggalBcs)) {
                 try {
-                    $tanggalBcsParsed = is_numeric($tanggalBcs)
-                        ? Carbon::createFromTimestamp(($tanggalBcs - 25569) * 86400)->toDateString()
-                        : Carbon::parse($tanggalBcs)->toDateString();
+                    if (is_numeric($tanggalBcs)) {
+                        $tanggalBcsParsed = Carbon::createFromTimestamp(($tanggalBcs - 25569) * 86400)->toDateString();
+                    } elseif (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $tanggalBcs, $m)) {
+                        $tanggalBcsParsed = Carbon::createFromDate($m[3], $m[2], $m[1])->toDateString();
+                    } else {
+                        $tanggalBcsParsed = Carbon::parse($tanggalBcs)->toDateString();
+                    }
                 } catch (\Exception $e) {
                     $tanggalBcsParsed = null;
                 }
@@ -134,6 +176,8 @@ class BCSSheetImport implements ToCollection
                     'plan_date'      => $planDateParsed,
                     'jarak_eksekusi' => $jarakEksekusi,
                     'remarks'        => $remarks,
+                    'eta'            => $eta ?? null,
+                    'posisi'         => $posisi ?? null,
                     // TIDAK update: tanggal_bcs, tanggal (upload), status
                 ]);
             } else {
@@ -153,8 +197,10 @@ class BCSSheetImport implements ToCollection
                     'jarak_eksekusi'     => $jarakEksekusi,
                     'tanggal_bcs'        => $tanggalBcsParsed,
                     'remarks'            => $remarks,
+                    'eta'                => $eta ?? null,
+                    'posisi'             => $posisi ?? null,
                     'tanggal'            => $this->tanggal,
-                    'status'             => 'pending',
+                    'status'             => 'outstanding',
                     'is_ready'           => false,
                 ]);
             }
