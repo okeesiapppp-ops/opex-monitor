@@ -174,7 +174,7 @@
                         <th>Tanggal Archive</th>
                         <th>Total Backlog</th>
                         <th>Complete</th>
-                        <th>Pending</th>
+                        <th>Outstanding</th>
                         <th>Overdue</th>
                         <th>Achievement</th>
                         <th>Aksi</th>

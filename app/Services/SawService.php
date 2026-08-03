@@ -23,7 +23,7 @@ class SawService
     public function recalculateOutstanding(): Collection
     {
         // Pola sama seperti BacklogDailyController@index: semua kecuali 'cancel'
-        $backlogs = TbBacklogDaily::whereNotIn('status', ['cancel'])->get();
+        $backlogs = TbBacklogDaily::where('status', 'outstanding')->get();
         if ($backlogs->isEmpty()) return collect();
 
         $matrix = $backlogs->map(function ($item) {

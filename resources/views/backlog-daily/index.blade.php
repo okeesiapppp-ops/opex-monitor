@@ -346,7 +346,17 @@
                         <th>Qty ZBOH</th>
                         @endif
                         <th>Status</th>
-                        <th>Prioritas (SAW)</th>
+                        <th>
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => request('sort') == 'saw' ? '' : 'saw']) }}"
+                               style="color:inherit;text-decoration:none;">
+                                Prioritas (SAW)
+                                @if(request('sort') == 'saw')
+                                    <i class="fas fa-sort-amount-up ml-1" style="color:#FFD700;"></i>
+                                @else
+                                    <i class="fas fa-sort ml-1" style="color:#aaa;"></i>
+                                @endif
+                            </a>
+                        </th>
                         @if(auth()->user()->role != 'planner')
                         <th>Aksi</th>
                         @endif

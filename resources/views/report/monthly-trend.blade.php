@@ -189,7 +189,7 @@
                         <th>Periode</th>
                         <th>Total Backlog</th>
                         <th>Complete</th>
-                        <th>Pending</th>
+                        <th>Outstanding</th>
                         <th>Overdue</th>
                     </tr>
                 </thead>

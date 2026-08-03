@@ -43,7 +43,12 @@ class BacklogDailyController extends Controller
             });
         }
 
-        $backlogDaily = $query->latest()->paginate(20);
+        // Sort by SAW priority if requested
+        if ($request->input('sort') == 'saw') {
+            $backlogDaily = $query->orderByRaw('ISNULL(priority_rank), priority_rank ASC')->paginate(20);
+        } else {
+            $backlogDaily = $query->latest()->paginate(20);
+        }
 
         // Hitung jarak eksekusi otomatis
         $backlogDaily->getCollection()->transform(function ($item) {

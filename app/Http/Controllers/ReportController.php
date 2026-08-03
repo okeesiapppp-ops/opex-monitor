@@ -114,7 +114,7 @@ class ReportController extends Controller
                 DB::raw('MONTH(tanggal_bcs) as month'),
                 DB::raw('COUNT(*) as total_backlog'),
                 DB::raw('SUM(CASE WHEN status = "complete" THEN 1 ELSE 0 END) as complete'),
-                DB::raw('SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending'),
+                DB::raw('SUM(CASE WHEN status = "outstanding" THEN 1 ELSE 0 END) as pending'),
                 DB::raw('SUM(CASE WHEN status = "outstanding" THEN 1 ELSE 0 END) as outstanding'),
                 DB::raw('ROUND(SUM(CASE WHEN status = "complete" THEN 1 ELSE 0 END) / COUNT(*) * 100, 2) as achievement')
             )

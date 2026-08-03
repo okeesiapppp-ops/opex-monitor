@@ -89,17 +89,6 @@
 
         <!-- BACKLOG MANAGEMENT -->
         <li style="padding: 12px 14px 4px; font-size: 10px; font-weight: 800; letter-spacing: 1.2px; color: #4A5568; text-transform: uppercase;">Backlog Management</li>
-
-        <li class="nav-item" style="margin-bottom:2px;">
-          <a href="{{ route('backlog.index') }}" class="nav-link {{ request()->routeIs('backlog.index') ? 'active' : '' }}" style="
-              border-radius: 8px; font-size: 13px; font-weight: 600;
-              padding: 9px 14px; color: #A0AEC0; transition: all .18s ease;
-              display: flex; align-items: center; gap: 10px;
-              {{ request()->routeIs('backlog.index') ? 'background: #FFD700 !important; color: #1A202C !important; box-shadow: 0 2px 8px rgba(255,215,0,.35);' : '' }}
-          ">
-            <i class="fas fa-database" style="width:16px; text-align:center; font-size:13px;"></i>
-            <span>Data Backlog</span>
-          </a>
         </li>
 
         <li class="nav-item" style="margin-bottom:2px;">

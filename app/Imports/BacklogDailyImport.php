@@ -4,7 +4,6 @@ namespace App\Imports;
 
 use App\Models\TbBacklogDaily;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Illuminate\Support\Collection;
 use Carbon\Carbon;
@@ -24,7 +23,10 @@ class BacklogDailyImport implements WithMultipleSheets
     public function sheets(): array
     {
         $sheets = [];
-        $spreadsheet = IOFactory::load(request()->file('file')->getPathname());
+        $filePath = request()->file('file')->getPathname();
+        $reader = IOFactory::createReaderForFile($filePath);
+        $reader->setReadDataOnly(true);
+        $spreadsheet = $reader->load($filePath);
         foreach ($spreadsheet->getSheetNames() as $name) {
             $sheets[$name] = new BCSSheetImport($this->tanggal);
         }
@@ -32,7 +34,7 @@ class BacklogDailyImport implements WithMultipleSheets
     }
 }
 
-class BCSSheetImport implements ToCollection, WithCalculatedFormulas
+class BCSSheetImport implements ToCollection
 {
     private $tanggal;
 

@@ -183,7 +183,6 @@
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Kode Vendor</th>
                         <th>Nama Vendor</th>
                         <th>PIC</th>
                         <th>Telepon</th>
@@ -196,11 +195,6 @@
                     @forelse($vendors as $i => $vendor)
                     <tr>
                         <td>{{ $vendors->firstItem() + $i }}</td>
-                        <td>
-                            <span class="kode-badge">
-                                {{ $vendor->kode_vendor ?? $vendor->code ?? '-' }}
-                            </span>
-                        </td>
                         <td>
                             <div class="d-flex align-items-center">
                                 <div class="vendor-avatar">

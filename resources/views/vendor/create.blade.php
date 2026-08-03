@@ -27,11 +27,6 @@
                         @error('nama_vendor')<span class="invalid-feedback">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group">
-                        <label>Kode Vendor <span class="text-danger">*</span></label>
-                        <input type="text" name="kode_vendor" class="form-control @error('kode_vendor') is-invalid @enderror" value="{{ old('kode_vendor') }}" required>
-                        @error('kode_vendor')<span class="invalid-feedback">{{ $message }}</span>@enderror
-                    </div>
-                    <div class="form-group">
                         <label>PIC <span class="text-danger">*</span></label>
                         <input type="text" name="pic" class="form-control @error('pic') is-invalid @enderror" value="{{ old('pic') }}" required>
                         @error('pic')<span class="invalid-feedback">{{ $message }}</span>@enderror

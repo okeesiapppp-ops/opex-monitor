@@ -178,6 +178,18 @@
 @endpush
 
 @section('content')
+@if(session('success'))
+<div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert" style="border-radius:10px;">
+    <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
+    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+</div>
+@endif
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show mx-3 mt-3" role="alert" style="border-radius:10px;">
+    <i class="fas fa-exclamation-triangle mr-2"></i> {{ session('error') }}
+    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+</div>
+@endif
 
 {{-- BARIS 1: 3 Kartu Statistik --}}
 <div class="row mb-3">
@@ -477,7 +489,6 @@
                             @endif
                         </td>
                         <td>
-                            <input type="text" class="form-control form-control-sm posisi-input" data-id="{{ $item->id }}" value="{{ $item->posisi ?? '' }}" placeholder="Posisi part..." style="width:130px; border-radius:6px; font-size:11px;">
                         </td>
                         <td>{{ $item->referensi_dokumen ?? '-' }}</td>
                         <td>{{ $item->material ?? '-' }}</td>
